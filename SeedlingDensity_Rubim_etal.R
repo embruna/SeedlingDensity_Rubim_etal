@@ -25,7 +25,7 @@ summary(Exp_Data)
 ###Will need to revise this to import the raw data and calclulate RGR from Raw data
 ###Forst do calclualtions, then join into one file, then do ANOVA
 ###this is a test to see if SSH worked
-####This is to test if working for Ethan...and now testing again...and again.
+####Deleted this line
 #################
 ###CALCLULATIONS OF RGR BAsed on Height & Leaf Area
 ##################
