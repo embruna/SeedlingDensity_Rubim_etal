@@ -1,5 +1,3 @@
-###Atest to see if commit worked after talking to Ethan
-
 
 #R CODE FOR IMPORTING, MANIPULATING, AND ANALYZING THE DATASETS USED IN: Rubim et al. Seedling Density MS
 ##################
