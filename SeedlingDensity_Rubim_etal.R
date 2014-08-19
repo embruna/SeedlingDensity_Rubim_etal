@@ -18,7 +18,8 @@ rm(list=ls())
 #load the  CSV files and save them as dataframes
 Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_18august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 summary(Exp_Data_C2)
-
+Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_18august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+summary(Exp_Data_C1)
 
 #####NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
 
