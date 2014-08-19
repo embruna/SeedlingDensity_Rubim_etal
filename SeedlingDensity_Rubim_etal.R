@@ -19,6 +19,9 @@ rm(list=ls())
 Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_18august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 summary(Exp_Data_C2)
 
+
+#####NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
+
 ##################
 ###step 2: reshape data - wide to long - and lineup adjacent columns with 
 ###leaf lengths and percent of each leaf missing
