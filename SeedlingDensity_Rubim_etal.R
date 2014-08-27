@@ -190,10 +190,13 @@ COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.type, block, trt, sdlg.
 #Formula for RGR is rgr=[ln(W2)-ln(W1)]/t2-t1, where W is weegith at time t 
 
 ###Need to
-COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/773
+COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
+COHORT2.long[, "rgr1.9"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
 
+boxplot(t1~block,data=COHORT1.long)
 hist(Exp_Data$ht.final)
 sort(Exp_Data$leafarea.initial)
+
 
 
 #################
