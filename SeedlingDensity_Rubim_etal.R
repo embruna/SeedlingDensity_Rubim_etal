@@ -17,6 +17,8 @@ library(reshape2)
 rm(list=ls())
 #load the  CSV files and save them as dataframes
 Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_18august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+#this makes sure treatment is an ordered factor (i.e., 1<2<4)
+Exp_Data_C2$trt <- ordered(Exp_Data_C2$trt, levels = c("one", "two", "four"))
 summary(Exp_Data_C2)
 
 
@@ -27,11 +29,13 @@ summary(Exp_Data_C2)
 ###leaf lengths and percent of each leaf missing
 ##################
 
-#select the columns for leaf length 
-mdata.la<-Exp_Data_C2[1:34]
+#select the columns for leaf length and number of days plant was alive (need to calclulate rgr)
+mdata.la<-Exp_Data_C2[,c(1:34,63)]
+
+
 #Now melt them with reshape2 package to create a dataframe with 
 #leaf-lengths in long form 
-mdata.la <- melt(mdata.la, id.var=c("cohort","seedling.id.no","block","trt", "sdlg.no", "sdlg.type"))
+mdata.la <- melt(mdata.la, id.var=c("cohort","seedling.id.no","block","trt", "sdlg.no", "sdlg.type", "days"))
 #rename the column "value" as leaf length
 names(mdata.la)[names(mdata.la)=="value"] <- "leaf.length"
 #now split the column with leaf number and time interval into 
@@ -72,6 +76,8 @@ cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort
 ##################
 #load the  CSV files and save them as dataframes
 Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_23august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+#this makes sure treatment is an ordered factor (i.e., 1<2<4)
+Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
 summary(Exp_Data_C1)
 
 ##################
@@ -80,10 +86,12 @@ summary(Exp_Data_C1)
 ##################
 
 #select the columns for leaf length 
-mdata.la.c1<-Exp_Data_C1[1:82] 
+mdata.la.c1<-Exp_Data_C1[,c(1:82,159)]
+
+
 #Now melt them with reshape2 package to create a dataframe with 
 #leaf-lengths in long form 
-mdata.la.c1 <- melt(mdata.la.c1, id.var=c("cohort", "seedling.id.no","block","trt", "sdlg.no", "sdlg.type"))
+mdata.la.c1 <- melt(mdata.la.c1, id.var=c("cohort", "seedling.id.no","block","trt", "sdlg.no", "sdlg.type", "days"))
 #rename the column "value" as leaf length
 names(mdata.la.c1)[names(mdata.la.c1)=="value"] <- "leaf.length"
 #now split the column with leaf number and time interval into 
@@ -117,15 +125,13 @@ cohort1.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort1.la$leaf.length)
 cohort1.la$leaf.percentage.missing[is.na(cohort1.la$leaf.percentage.missing)] <- 0
 cohort1.la[, "corrected.leaf.area"] <-cohort1.la$uncorrected.leaf.area - (cohort1.la$uncorrected.leaf.area*(cohort1.la$leaf.percentage.missing/100))
 
+##################
 ###step 4: AGGREGATE DATA AS NEEDED FOR ANALYSIS  
 ##################
 
-
-###Q: shoudl each cohort get its own anova?  Cohort lengths were different and included multiple years, so probably not a good idea to combine in sinngle analysis?
-
 #Aggregate data: summed the leaf-areas for each plant in each sampling interval
 COHORT1<-aggregate(cohort1.la$corrected.leaf.area, by=list(cohort1.la$cohort, cohort1.la$block, 
-                    cohort1.la$trt, cohort1.la$sdlg.type,cohort1.la$seedling.id.no, cohort1.la$interval), 
+                    cohort1.la$trt, cohort1.la$sdlg.type,cohort1.la$seedling.id.no, cohort1.la$interval,cohort1.la$days), 
                     FUN=sum, na.rm=TRUE)
 #rename the columns
 names(COHORT1)[1] <- "cohort"
@@ -134,13 +140,14 @@ names(COHORT1)[3] <- "trt"
 names(COHORT1)[4] <- "sdlg.type"
 names(COHORT1)[5] <- "sdlg.id.no"
 names(COHORT1)[6] <- "interval"
-names(COHORT1)[7] <- "leaf.area"
+names(COHORT1)[7] <- "days"
+names(COHORT1)[8] <- "leaf.area"
 
 COHORT1
 
 
 COHORT2<-aggregate(cohort2.la$corrected.leaf.area, by=list(cohort2.la$cohort, cohort2.la$block, 
-                    cohort2.la$trt, cohort2.la$sdlg.type,cohort2.la$seedling.id.no, cohort2.la$interval), 
+                    cohort2.la$trt, cohort2.la$sdlg.type,cohort2.la$seedling.id.no, cohort2.la$interval, cohort2.la$days), 
                     FUN=sum, na.rm=TRUE)
 names(COHORT2)[1] <- "cohort"
 names(COHORT2)[2] <- "block"
@@ -148,20 +155,48 @@ names(COHORT2)[3] <- "trt"
 names(COHORT2)[4] <- "sdlg.type"
 names(COHORT2)[5] <- "sdlg.id.no"
 names(COHORT2)[6] <- "interval"
-names(COHORT2)[7] <- "leaf.area"
+names(COHORT2)[7] <- "days"
+names(COHORT2)[8] <- "leaf.area"
 COHORT2
 
+#using reshape2 to cast the data back into wide form to calclulate RGR (its a data frame, hence dcast)
+COHORT1.long<- dcast(COHORT1, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
+COHORT2.long<- dcast(COHORT2, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
+#Sigh. Have to rename the columes of the intervals, it's just easier than remembering to use "1" in all formulas
+#renaming columsn cohort 1
+names(COHORT1.long)[7] <- "t1"
+names(COHORT1.long)[8] <- "t2"
+names(COHORT1.long)[9] <- "t3"
+names(COHORT1.long)[10] <- "t4"
+names(COHORT1.long)[11] <- "t5"
+names(COHORT1.long)[12] <- "t6"
+names(COHORT1.long)[13] <- "t7"
+names(COHORT1.long)[14] <- "t8"
+names(COHORT1.long)[15] <- "t9"
+#renaming columns cohort 2
+names(COHORT2.long)[7] <- "t1"
+names(COHORT2.long)[8] <- "t2"
+names(COHORT2.long)[9] <- "t3"
+names(COHORT2.long)[10] <- "t4"
 
+
+#A little sorting, just to make it easier to visualize
+COHORT1.long<-COHORT1.long[with(COHORT1.long, order(sdlg.type, block, trt, sdlg.id.no)), ]
+COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.type, block, trt, sdlg.id.no)), ]
 
 #################
-###CALCLULATIONS OF RGR BAsed on Height & Leaf Area
+###CALCLULATIONS OF RGR BAsed on Leaf Area
 ##################
 #Formula for RGR is rgr=[ln(W2)-ln(W1)]/t2-t1, where W is weegith at time t 
-rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
-rgr.la=(log(Exp_Data$leafarea.final)-log(Exp_Data$leafarea.initial))/Exp_Data$days
+
+###Need to
+COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/773
 
 hist(Exp_Data$ht.final)
 sort(Exp_Data$leafarea.initial)
 
 
-
+#################
+###CALCLULATIONS OF RGR BAsed on seedling height
+##################
+#rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
