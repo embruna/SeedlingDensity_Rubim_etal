@@ -3,42 +3,16 @@
 
 #These are the last data entry and manipulation" things that need to be dealth with prior to analyses
 
-#Email of August 28 (follow up to email of 20 August below)
-#Rubim, mais uma tentativa – continuou confuso.
+#Email of August 28
 
 #1 Me explica de novo o que querem dizer os favores nas colunas morre1, morre2, etc.  Acredito que era que se uma planta competidora corria era trocada por outra do viveiro, eh isso? E se era uma planta focal?  
 #RESPOSTA: Foi as vezes que houve mortalidade no balde. quando era focal outra foi sorteada  e substitituida.
 
-#2Como devo interpretar o que esta nas células, como 1.a.2 ou 3.a.4?  Como vou saber qual foi a nova planta inserida no lugar da morta?
-#RESPOSTA: 1 a 2,etc...são os intervalos de crescimentos...que usei para calcular o quanto tempo conviveram juntas, para os calculos do RGR. Quando morria uma focal, descartava o intervalo de crescimento. a próxima medida era a da substituta.
-
-#3essa coluna morreu 1,etc, eram as vezes que aviam plantulas mortas, e 1 a 2, etc, os intervalos considarados vivos para calculos, á que quando encontrava morta, o tempo entre de crescimento desse intervalo teria que ser descontado nos dias de crescimento total
-#RESPOSTA: isso,isso
-
-
-#4 Ainda nao entendi.  Veja como exemplo na pasta Data -Rubim–CSV  o arquivo ExPDATACOHORT2_18august2014.
-#Tem 2 linhas marcadas com amarelo.  Ainda não entendi se isso dize que foi a planta focal que morreu e foi colocada outra no lugar, se foi uma competidora que morreu, ou que.
-#RESPOSTA: a destacada era a morta e posteriormente a substituida
-
-#5 No Cohort 1 tem um grupo de plantas que tem valor “0” nos valores de folhas para os primeiros três intervalos. O que houve aqui?  Estao todas nos blocos 17, 18, e 19.
-#RESPOSTA: ha,lembrei...foi um incremento de mais três blocos (17,18 e 19) para aumentar o N,
-
-
-#email of August 20
-#1. Algumas plantas nao tem valor na coluna “days” (dias de vida. Porque?  Seguem vivas? (veja RAW_DATA_EXPERIMENTS_15august2014.xlsx na pasta EB Revision).
-#RESPOSTA: Elas também tem valor de 370 dias Emilio, acabei não preencendo pois acabei dando atenção de cuidar dos calculos das focais, 
-#que realmente seriam utilizadas nos calculos.
-                                                   
-#2. Me explica de novo o que querem dizer os favores nas colunas morre1, morre2, etc.  
-#Acredito que era que se uma planta competidora corria era trocada por outra do viveiro, eh isso? E se era uma planta focal?  
-#Como devo interpretar o que esta nas células, como 1.a.2 ou 3.a.4?  Como vou saber qual foi a nova planta inserida no lugar da morta?
-                                                   
-#RESPOSTA: essa coluna morreu 1,etc, eram as vezes que aviam plantulas mortas, e 1 a 2, etc, os intervalos considarados vivos para calculos, 
-#á que quando encontrava morta, o tempo entre de crescimento desse intervalo teria que ser descontado nos dias de crescimento total.
-     
-#Email of August 28
-#1Para cada cohort, que intervalos de medida correspondem a seca/chuva?  E depois de autos dias foi feito cada medida?  
-#Por exemplo, intervalo 2=60, intervalo 3=100, intervalo 4 = 200…etc.
+#In other words, 
+#1.a.4 5.a.9 means the first plant was alive peiods intervals 1-4, then replaced with another from 6-9
+#DECSION: key is focal plant - so should we do analyes only with 1-4? My gut is YES because it meant that one died.  Or can do for both, and average the RGR?
+#NOTE: must make sure #days corresponds to dates of intervals, which durrently don't.
+#DECSION 2: #Change ht and la from dead to zero?
 
 #Momentos  Experimento_1	dias
 
@@ -141,6 +115,10 @@ cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort
 Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_23august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 #this makes sure treatment is an ordered factor (i.e., 1<2<4)
 Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
+#Rubim included three more blocks after the experiment started to increase the sample siz - Blocks 17, 18, 19 - but they weren't in the ground
+#nearly as long as the others. I would suggest excluding them from the analyses. The following line does that.
+Exp_Data_C1<-Exp_Data_C1[Exp_Data_C1$block<17,]
+
 summary(Exp_Data_C1)
 
 ##################
