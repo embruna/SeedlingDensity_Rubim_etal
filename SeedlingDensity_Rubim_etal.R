@@ -44,6 +44,8 @@
 
 setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Rubim Manuscripts/Seedling density[3]/EB Revision/Data-Rubim-CSV")
 library(reshape2)
+library(dplyr)
+library(tidyr)
 
 
 
@@ -261,6 +263,45 @@ hist(COHORT2.long$rgr1.4)
 ###      ANALYSES - RGR Based on LEAF AREA     ###
 ###
 ###################################################
+
+# COHORT ONE
+#Reduce dataset: only include "focal" seedlings.
+Focal.One<-filter(COHORT1.long, sdlg.type == "focal")
+Focal.One<-droplevels(Focal.One)
+summary(Focal.One)
+
+glm.1<-glm(rgr1.9 ~ block, family = gaussian, data = Focal.One)
+summary(glm.1)
+
+glm.2<-glm(rgr1.9 ~ trt+block, family = gaussian, data = Focal.One)
+summary(glm.2)
+anova(glm.1,glm.2, test = "Chisq")
+
+AIC(glm.1, glm.2)
+
+#SIMPLER AS ANOVA
+aov1<-aov(rgr1.9 ~ trt+block, data = Focal.One)
+summary(aov1)
+
+# COHORT TWO
+#Reduce dataset: only include "focal" seedlings.
+Focal.Two<-filter(COHORT2.long, sdlg.type == "focal")
+Focal.Two<-droplevels(Focal.Two)
+summary(Focal.Two)
+
+glm.3<-glm(rgr1.4 ~ block, family = gaussian, data = Focal.Two)
+summary(glm.3)
+
+glm.4<-glm(rgr1.4 ~ trt+block, family = gaussian, data = Focal.Two)
+summary(glm.4)
+anova(glm.3,glm.4, test = "Chisq")
+
+AIC(glm.3, glm.4)
+
+#SIMPLER AS ANOVA
+aov2<-aov(rgr1.4 ~ trt+block, data = Focal.Two)
+summary(aov2)
+
 
 
 
