@@ -42,7 +42,7 @@
 ###Set WD and load packages you need.
 ##################
 
-setwd("/Users/emiliobruna/Dropbox/Rubim Manuscripts/Seedling density[3]/EB Revision/Data-Rubim-CSV")
+setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Rubim Manuscripts/Seedling density[3]/EB Revision/Data-Rubim-CSV")
 library(reshape2)
 
 
@@ -230,13 +230,40 @@ COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.type, block, trt, sdlg.
 ##################
 #Formula for RGR is rgr=[ln(W2)-ln(W1)]/t2-t1, where W is weegith at time t 
 
-###Need to
-COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
-COHORT2.long[, "rgr1.9"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
+# NEED TO FIGURE OUT WHIHC OF THESE IS TRUE - ARE PLANTS WITH ZERO IN LAST COLUMN ALIVE OR DEAD???
+# Some of the plants had a leaf area of "0" in the last measuremnt
+# If this means the plant is dead, then use this to convert those values to NA so that they don't mess up the calclulation of RGR
+COHORT1.long$t9[COHORT1.long$t9== 0] <- NA
+COHORT2.long$t4[COHORT2.long$t4== 0] <- NA
 
-boxplot(t1~block,data=COHORT1.long)
-hist(Exp_Data$ht.final)
-sort(Exp_Data$leafarea.initial)
+# BUT IF THEY ARE STIL ALIVE AND HAVE NO LEAVES, then first calclulate RGR below, then convert the Inf answer to NA using the do.call lines below 
+
+COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
+COHORT2.long[, "rgr1.4"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
+
+# YOU ONLY NEED THESE IF THE ZEROS FOR PLANT LEAF AREA IN THE LAST TIME INTERVAL MEANS PLANTS SURVIVED BUT HAD NO LEAVES. 
+# COHORT1.long<-do.call(data.frame,lapply(COHORT1.long, function(x) replace(x, is.infinite(x),NA)))
+# COHORT2.long<-do.call(data.frame,lapply(COHORT1.long, function(x) replace(x, is.infinite(x),NA)))
+
+str(COHORT1.long)
+summary(COHORT1.long)
+
+# Box plot of median leaf area of plants in each block at T1 
+boxplot(t1~block,data=COHORT1.long) #Cohort 1
+boxplot(t1~block,data=COHORT2.long) #Cohort2
+
+
+hist(COHORT1.long$rgr1.9)
+hist(COHORT2.long$rgr1.4)
+
+###################################################
+###
+###      ANALYSES - RGR Based on LEAF AREA     ###
+###
+###################################################
+
+
+
 
 
 
