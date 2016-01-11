@@ -46,7 +46,7 @@ setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Rubim Manuscripts/Seedling dens
 library(reshape2)
 library(dplyr)
 library(tidyr)
-
+library(ggplot2)
 
 
 #################
@@ -57,6 +57,8 @@ rm(list=ls())
 # load the  CSV files and save them as dataframes
 canopy<-read.csv("canopy_cover.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 bmass<-read.csv("final_sdlg_biomass.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+# Make treatment an ordered factor (i.e., 1<2<4)
+bmass$trt <- ordered(bmass$trt, levels = c("one", "two", "four"))
 
 
 # COHORT 1
@@ -280,6 +282,16 @@ boxplot(t1~block,data=COHORT2.long) #Cohort2
 
 hist(COHORT1.long$rgr1.9)
 hist(COHORT2.long$rgr1.4)
+#BOX PLOT INCLUDING ALL PLANTS 
+rgrALL1 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.9)) + 
+  geom_boxplot()
+rgrALL1
+
+
+rgrALL2 <- ggplot(COHORT2.long, aes(x=trt, y=rgr1.4)) + 
+  geom_boxplot()
+rgrALL2
+
 
 ###################################################
 ###
@@ -330,15 +342,34 @@ summary(aov2)
 bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
 bmass<-full_join(bmass, canopy, by = "block")
 bmass<-select(bmass, block:canopy.openess.percent)
+
+# logit trasnform, but actually don't do this...
+# bmass<-bmass[, "logitRS"] <-log10(bmass$RSratio+/(1-bmass$RSratio))
+
 # SPlit the cohorts 
 bmass.1<-filter(bmass, cohort == "1")
 bmass.1<-droplevels(bmass.1)
+str(bmass.1)
 hist(bmass.1$RSratio)
+aov.bmass.1<-aov(RSratio ~ trt+block, data = bmass.1)
+summary(aov.bmass.1)
+
 
 bmass.2<-filter(bmass, cohort == "2")
 bmass.2<-droplevels(bmass.2)
 hist(bmass.2$RSratio)
+aov.bmass.2<-aov(RSratio ~ trt+block, data = bmass.2)
+summary(aov.bmass.2)
 
+
+# Graph 
+bmass1Fig <- ggplot(bmass.1, aes(x=trt, y=RSratio)) + 
+  geom_boxplot()
+bmass1Fig
+
+bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) + 
+  geom_boxplot()
+bmass2Fig
 
 #################
 ###CALCLULATIONS OF RGR BAsed on seedling height
