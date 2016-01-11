@@ -42,7 +42,7 @@
 ###Set WD and load packages you need.
 ##################
 
-setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Rubim Manuscripts/Seedling density[3]/EB Revision/Data-Rubim-CSV")
+setwd("/Users/emiliobruna/Dropbox/SHARED FOLDERS/Rubim Manuscripts/Seedling density[3]/EB Revision/Data-Rubim-CSV/READY FOR ANALYSIS")
 library(reshape2)
 library(dplyr)
 library(tidyr)
@@ -54,23 +54,101 @@ library(tidyr)
 ##################
 #CLear out everything from the environment 
 rm(list=ls())
-#load the  CSV files and save them as dataframes
-Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_18august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
-#this makes sure treatment is an ordered factor (i.e., 1<2<4)
+# load the  CSV files and save them as dataframes
+canopy<-read.csv("canopy_cover.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+bmass<-read.csv("final_sdlg_biomass.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+
+
+# COHORT 1
+Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_26nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+# Make treatment an ordered factor (i.e., 1<2<4)
+Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
+#Rubim included three more blocks after the experiment started to increase the sample siz - Blocks 17, 18, 19 - but they weren't in the ground
+#nearly as long as the others. I would suggest excluding them from the analyses. The following line does that.
+Exp_Data_C1<-Exp_Data_C1[Exp_Data_C1$block<17,]
+summary(Exp_Data_C1)
+
+
+# COHORT 2
+Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_20nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+# Make treatment an ordered factor (i.e., 1<2<4)
 Exp_Data_C2$trt <- ordered(Exp_Data_C2$trt, levels = c("one", "two", "four"))
 summary(Exp_Data_C2)
 
 
+#(MA)NCOVA: LA by trt with block 
+#(M)ANCOVA: HT by trt with block
+
+
+
+
+
+
 #####NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
 
+
+
 ##################
-###step 2: reshape data - wide to long - and lineup adjacent columns with 
-###leaf lengths and percent of each leaf missing
+###DO EXACTLY THE SAME FOR COHORT 1
+##################
+
+##################
+### COHORT 1
+### step 2: reshape data - wide to long - and lineup adjacent columns with 
+### leaf lengths and percent of each leaf missing
+##################
+
+#select the columns for leaf length 
+mdata.la.c1<-Exp_Data_C1[,c(1:82,159)]
+
+#Now melt them with reshape2 package to create a dataframe with 
+#leaf-lengths in long form 
+mdata.la.c1 <- melt(mdata.la.c1, id.var=c("cohort", "seedling.id.no","block","trt", "sdlg.no", "sdlg.type", "days"))
+#rename the column "value" as leaf length
+names(mdata.la.c1)[names(mdata.la.c1)=="value"] <- "leaf.length"
+#now split the column with leaf number and time interval into 
+#two columns to make it easier to sum leaf areas for individual plants 
+names(mdata.la.c1)[names(mdata.la.c1)=="variable"] <- "leaf"
+split.c1 <- mdata.la.c1$leaf
+split.c1<-colsplit(split.c1, ".t", c("leaf", "interval"))
+mdata.la.c1<-cbind(mdata.la.c1,split.c1)
+#and to keep thinks clean delete the column that you just split in two
+mdata.la.c1$leaf <- NULL
+#now add a column with % of leaf area missing to that dataframe
+#to do so create a dataframe with leaf-areas missing in long form
+mdata.miss.c1<-Exp_Data_C1[,c(2,83:158)]  
+mdata.miss.c1 <- melt(mdata.miss.c1, id.var=c("seedling.id.no"))
+#then rename the column "value" for as "leaf.percentage.missing"
+names(mdata.miss.c1)[names(mdata.miss.c1)=="value"] <- "leaf.percentage.missing"
+#add that column to the dataframe of leaf lengths and rename that column
+cohort1.la<-cbind(mdata.la.c1,mdata.miss.c1$leaf.percentage.missing)
+names(cohort1.la)[names(cohort1.la)=="mdata.miss.c1$leaf.percentage.missing"] <- "leaf.percentage.missing"
+#the final steps are cleanup: remove NA, which leaves for each plant with records for only the leaves it actually had
+#and to add a column identifying which cohort this is (which you will need when you rbind cohort 1 and 2 for analyses)
+
+##################
+###step 3: calclulate the area of each leaf, subtract the area missing from each leaf
+###and sum to find the total leaf area of each plant in each time interval
+##################
+#first need to select only the rows that don't have NA in leaf area
+cohort1.la<-filter(cohort1.la, leaf.length >=0)
+#Adds a column with the leaf area (uncorrected). LA is calculated using the formula in Bruna 2002 Oecologia 
+cohort1.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort1.la$leaf.length)
+#first removes NA from the column of percet of each leaf missing (in some cases NA because there was no measurment was taken
+#then adds a column with the "corrected" leaf area (i.e., corrected leaf area - % missing) 
+cohort1.la$leaf.percentage.missing[is.na(cohort1.la$leaf.percentage.missing)] <- 0
+cohort1.la[, "corrected.leaf.area"] <-cohort1.la$uncorrected.leaf.area - (cohort1.la$uncorrected.leaf.area*(cohort1.la$leaf.percentage.missing/100))
+
+
+
+##################
+#### COHORT 2
+### step 3: reshape data - wide to long - and lineup adjacent columns with 
+### leaf lengths and percent of each leaf missing
 ##################
 
 #select the columns for leaf length and number of days plant was alive (need to calclulate rgr)
 mdata.la<-Exp_Data_C2[,c(1:34,63)]
-
 
 #Now melt them with reshape2 package to create a dataframe with 
 #leaf-lengths in long form 
@@ -102,71 +180,13 @@ names(cohort2.la)[names(cohort2.la)=="mdata.miss$leaf.percentage.missing"] <- "l
 ###and sum to find the total leaf area of each plant in each time interval
 ##################
 #Adds a column with the leaf area (uncorrected). LA is calculated using the formula in Bruna 2002 Oecologia 
+cohort2.la<-filter(cohort1.la, leaf.length >=0)
 cohort2.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort2.la$leaf.length)
 
 #first removes NA from the column of percet of each leaf missing (in some cases NA because there was no measurment was taken
 #then adds a column with the "corrected" leaf area (i.e., corrected leaf area - % missing) 
 cohort2.la$leaf.percentage.missing[is.na(cohort2.la$leaf.percentage.missing)] <- 0
 cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort2.la$uncorrected.leaf.area*(cohort2.la$leaf.percentage.missing/100))
-
-
-##################
-###DO EXACTLY THE SAME FOR COHORT 1
-##################
-#load the  CSV files and save them as dataframes
-Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_23august2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
-#this makes sure treatment is an ordered factor (i.e., 1<2<4)
-Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
-#Rubim included three more blocks after the experiment started to increase the sample siz - Blocks 17, 18, 19 - but they weren't in the ground
-#nearly as long as the others. I would suggest excluding them from the analyses. The following line does that.
-Exp_Data_C1<-Exp_Data_C1[Exp_Data_C1$block<17,]
-
-summary(Exp_Data_C1)
-
-##################
-###step 2: reshape data - wide to long - and lineup adjacent columns with 
-###leaf lengths and percent of each leaf missing
-##################
-
-#select the columns for leaf length 
-mdata.la.c1<-Exp_Data_C1[,c(1:82,159)]
-
-
-#Now melt them with reshape2 package to create a dataframe with 
-#leaf-lengths in long form 
-mdata.la.c1 <- melt(mdata.la.c1, id.var=c("cohort", "seedling.id.no","block","trt", "sdlg.no", "sdlg.type", "days"))
-#rename the column "value" as leaf length
-names(mdata.la.c1)[names(mdata.la.c1)=="value"] <- "leaf.length"
-#now split the column with leaf number and time interval into 
-#two columns to make it easier to sum leaf areas for individual plants 
-names(mdata.la.c1)[names(mdata.la.c1)=="variable"] <- "leaf"
-split.c1 <- mdata.la.c1$leaf
-split.c1<-colsplit(split.c1, ".t", c("leaf", "interval"))
-mdata.la.c1<-cbind(mdata.la.c1,split.c1)
-#and to keep thinks clean delete the column that you just split in two
-mdata.la.c1$leaf <- NULL
-#now add a column with % of leaf area missing to that dataframe
-#to do so create a dataframe with leaf-areas missing in long form
-mdata.miss.c1<-Exp_Data_C1[,c(2,83:158)]  
-mdata.miss.c1 <- melt(mdata.miss.c1, id.var=c("seedling.id.no"))
-#then rename the column "value" for as "leaf.percentage.missing"
-names(mdata.miss.c1)[names(mdata.miss.c1)=="value"] <- "leaf.percentage.missing"
-#add that column to the dataframe of leaf lengths and rename that column
-cohort1.la<-cbind(mdata.la.c1,mdata.miss.c1$leaf.percentage.missing)
-names(cohort1.la)[names(cohort1.la)=="mdata.miss.c1$leaf.percentage.missing"] <- "leaf.percentage.missing"
-#the final steps are cleanup: remove NA, which leaves for each plant with records for only the leaves it actually had
-#and to add a column identifying which cohort this is (which you will need when you rbind cohort 1 and 2 for analyses)
-
-##################
-###step 3: calclulate the area of each leaf, subtract the area missing from each leaf
-###and sum to find the total leaf area of each plant in each time interval
-##################
-#Adds a column with the leaf area (uncorrected). LA is calculated using the formula in Bruna 2002 Oecologia 
-cohort1.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort1.la$leaf.length)
-#first removes NA from the column of percet of each leaf missing (in some cases NA because there was no measurment was taken
-#then adds a column with the "corrected" leaf area (i.e., corrected leaf area - % missing) 
-cohort1.la$leaf.percentage.missing[is.na(cohort1.la$leaf.percentage.missing)] <- 0
-cohort1.la[, "corrected.leaf.area"] <-cohort1.la$uncorrected.leaf.area - (cohort1.la$uncorrected.leaf.area*(cohort1.la$leaf.percentage.missing/100))
 
 ##################
 ###step 4: AGGREGATE DATA AS NEEDED FOR ANALYSIS  
@@ -200,11 +220,14 @@ names(COHORT2)[5] <- "sdlg.id.no"
 names(COHORT2)[6] <- "interval"
 names(COHORT2)[7] <- "days"
 names(COHORT2)[8] <- "leaf.area"
+
 COHORT2
 
 #using reshape2 to cast the data back into wide form to calclulate RGR (its a data frame, hence dcast)
 COHORT1.long<- dcast(COHORT1, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
 COHORT2.long<- dcast(COHORT2, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
+
+
 #Sigh. Have to rename the columes of the intervals, it's just easier than remembering to use "1" in all formulas
 #renaming columsn cohort 1
 names(COHORT1.long)[7] <- "t1"
@@ -268,44 +291,53 @@ hist(COHORT2.long$rgr1.4)
 #Reduce dataset: only include "focal" seedlings.
 Focal.One<-filter(COHORT1.long, sdlg.type == "focal")
 Focal.One<-droplevels(Focal.One)
+Focal.One<-full_join(Focal.One, canopy, by = "block")
 summary(Focal.One)
 
 glm.1<-glm(rgr1.9 ~ block, family = gaussian, data = Focal.One)
 summary(glm.1)
-
 glm.2<-glm(rgr1.9 ~ trt+block, family = gaussian, data = Focal.One)
 summary(glm.2)
 anova(glm.1,glm.2, test = "Chisq")
-
 AIC(glm.1, glm.2)
 
 #SIMPLER AS ANOVA
 aov1<-aov(rgr1.9 ~ trt+block, data = Focal.One)
 summary(aov1)
+plot(Focal.One$canopy.openess.percent, Focal.One$rgr1.9)
 
 # COHORT TWO
 #Reduce dataset: only include "focal" seedlings.
 Focal.Two<-filter(COHORT2.long, sdlg.type == "focal")
 Focal.Two<-droplevels(Focal.Two)
+Focal.Two<-full_join(Focal.Two, canopy, by = "block")
 summary(Focal.Two)
 
 glm.3<-glm(rgr1.4 ~ block, family = gaussian, data = Focal.Two)
 summary(glm.3)
-
 glm.4<-glm(rgr1.4 ~ trt+block, family = gaussian, data = Focal.Two)
 summary(glm.4)
 anova(glm.3,glm.4, test = "Chisq")
-
 AIC(glm.3, glm.4)
 
 #SIMPLER AS ANOVA
 aov2<-aov(rgr1.4 ~ trt+block, data = Focal.Two)
 summary(aov2)
 
+#####################
+# BIOMASS
 
+bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
+bmass<-full_join(bmass, canopy, by = "block")
+bmass<-select(bmass, block:canopy.openess.percent)
+# SPlit the cohorts 
+bmass.1<-filter(bmass, cohort == "1")
+bmass.1<-droplevels(bmass.1)
+hist(bmass.1$RSratio)
 
-
-
+bmass.2<-filter(bmass, cohort == "2")
+bmass.2<-droplevels(bmass.2)
+hist(bmass.2$RSratio)
 
 
 #################
