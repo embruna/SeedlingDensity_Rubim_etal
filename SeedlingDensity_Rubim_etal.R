@@ -55,6 +55,7 @@ library(ggplot2)
 #CLear out everything from the environment 
 rm(list=ls())
 # load the  CSV files and save them as dataframes
+
 canopy<-read.csv("canopy_cover.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 bmass<-read.csv("final_sdlg_biomass.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # Make treatment an ordered factor (i.e., 1<2<4)
@@ -78,21 +79,14 @@ Exp_Data_C2$trt <- ordered(Exp_Data_C2$trt, levels = c("one", "two", "four"))
 summary(Exp_Data_C2)
 
 
-#(MA)NCOVA: LA by trt with block 
-#(M)ANCOVA: HT by trt with block
 
-
-
-
-
+##################
+### 
+### TOTAL LEAF AREA FOR EACH SEEDLING
+### 
+##################
 
 #####NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
-
-
-
-##################
-###DO EXACTLY THE SAME FOR COHORT 1
-##################
 
 ##################
 ### COHORT 1
@@ -190,6 +184,10 @@ cohort2.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort2.la$leaf.length)
 cohort2.la$leaf.percentage.missing[is.na(cohort2.la$leaf.percentage.missing)] <- 0
 cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort2.la$uncorrected.leaf.area*(cohort2.la$leaf.percentage.missing/100))
 
+
+
+
+
 ##################
 ###step 4: AGGREGATE DATA AS NEEDED FOR ANALYSIS  
 ##################
@@ -266,6 +264,8 @@ COHORT2.long$t4[COHORT2.long$t4== 0] <- NA
 # BUT IF THEY ARE STIL ALIVE AND HAVE NO LEAVES, then first calclulate RGR below, then convert the Inf answer to NA using the do.call lines below 
 
 COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
+COHORT1.long[, "rgr1.4"] <-(log(COHORT1.long$t4)-log(COHORT1.long$t1))/COHORT1.long$days
+
 COHORT2.long[, "rgr1.4"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
 
 # YOU ONLY NEED THESE IF THE ZEROS FOR PLANT LEAF AREA IN THE LAST TIME INTERVAL MEANS PLANTS SURVIVED BUT HAD NO LEAVES. 
@@ -281,11 +281,20 @@ boxplot(t1~block,data=COHORT2.long) #Cohort2
 
 
 hist(COHORT1.long$rgr1.9)
+
+hist(COHORT1.long$rgr1.4)
+
 hist(COHORT2.long$rgr1.4)
 #BOX PLOT INCLUDING ALL PLANTS 
-rgrALL1 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.9)) + 
+
+rgrALL1.4 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.4)) + 
   geom_boxplot()
-rgrALL1
+rgrALL1.4
+
+
+rgrALL1.9 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.9)) + 
+  geom_boxplot()
+rgrALL1.9
 
 
 rgrALL2 <- ggplot(COHORT2.long, aes(x=trt, y=rgr1.4)) + 
@@ -317,6 +326,18 @@ AIC(glm.1, glm.2)
 aov1<-aov(rgr1.9 ~ trt+block, data = Focal.One)
 summary(aov1)
 plot(Focal.One$canopy.openess.percent, Focal.One$rgr1.9)
+
+# repeated measures ANOVA with growth after 1 year, then after 2 years.
+#
+#
+#
+# NEED TO CODE THE RM ANOVA
+#
+#
+#
+
+
+
 
 # COHORT TWO
 #Reduce dataset: only include "focal" seedlings.
@@ -375,3 +396,69 @@ bmass2Fig
 ###CALCLULATIONS OF RGR BAsed on seedling height
 ##################
 #rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
+
+# COHORT 1
+str(Exp_Data_C1)
+ht.cohort1<-Exp_Data_C1
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort1 <- ht.cohort1[ -c(7:158,169:181)]
+str(ht.cohort1)
+
+# CALC of RGR 
+ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
+ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
+
+# BOX PLOTS
+boxplot(rgr.ht.1.4~block,data=ht.cohort1) #Cohort 1 1.4
+boxplot(rgr.ht.1.9~block,data=ht.cohort1) #Cohort 1 1.9
+boxplot(ht.4~trt,data=ht.cohort1) #Cohort 1 ht final after 4
+boxplot(ht.9~trt,data=ht.cohort1) #Cohort 1 ht final after 9
+
+# ANOVA
+# First reduce to only "focal' seedlings
+ht.cohort1.focal<-filter(ht.cohort1, sdlg.type == "focal")
+ht.cohort1.focal<-droplevels(ht.cohort1.focal)
+
+
+boxplot(ht.4~trt,data=ht.cohort1.focal) #Cohort 1 focal ht final after 4
+boxplot(ht.9~trt,data=ht.cohort1.focal) #Cohort 1 ht focal final after 9
+
+
+aov.C1.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort1.focal)
+summary(aov.C1.14)
+
+aov.C1.19<-aov(rgr.ht.1.9 ~ trt+block, data = ht.cohort1.focal)
+summary(aov.C1.19)
+
+
+# COHORT 2
+str(Exp_Data_C2)
+ht.cohort2<-Exp_Data_C2
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
+
+# CALC of RGR 
+ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
+str(ht.cohort2)
+
+# BOX PLOTS
+boxplot(rgr.ht.1.4~block,data=ht.cohort2) #Cohort 2 1.4
+boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
+
+
+# ANOVA
+ht.cohort2.focal<-filter(ht.cohort2, sdlg.type == "focal")
+ht.cohort2.focal<-droplevels(ht.cohort2.focal)
+
+boxplot(ht.4~trt,data=ht.cohort2.focal) #Cohort 1 ht focal final after 4
+
+aov.C2.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort2.focal)
+summary(aov.C2.14)
+
+
+############
+
+# SINGLE DATAFRAME FOR ALL DATA
+
