@@ -61,7 +61,6 @@ bmass<-read.csv("final_sdlg_biomass.csv", dec=".", header = TRUE, sep = ",", che
 # Make treatment an ordered factor (i.e., 1<2<4)
 bmass$trt <- ordered(bmass$trt, levels = c("one", "two", "four"))
 
-
 # COHORT 1
 Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_26nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # Make treatment an ordered factor (i.e., 1<2<4)
@@ -70,7 +69,6 @@ Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
 #nearly as long as the others. I would suggest excluding them from the analyses. The following line does that.
 Exp_Data_C1<-Exp_Data_C1[Exp_Data_C1$block<17,]
 summary(Exp_Data_C1)
-
 
 # COHORT 2
 Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_20nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -82,11 +80,10 @@ summary(Exp_Data_C2)
 
 ##################
 ### 
-### TOTAL LEAF AREA FOR EACH SEEDLING
-### 
+### CALCULATE THE TOTAL LEAF AREA OF EACH SEEDLING
+### NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
+###
 ##################
-
-#####NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
 
 ##################
 ### COHORT 1
@@ -176,15 +173,22 @@ names(cohort2.la)[names(cohort2.la)=="mdata.miss$leaf.percentage.missing"] <- "l
 ###and sum to find the total leaf area of each plant in each time interval
 ##################
 #Adds a column with the leaf area (uncorrected). LA is calculated using the formula in Bruna 2002 Oecologia 
-cohort2.la<-filter(cohort1.la, leaf.length >=0)
+cohort2.la<-filter(cohort2.la, leaf.length >=0)
+cohort2.la$leaf.length<-as.numeric(as.character(cohort2.la$leaf.length))
+cohort2.la<-na.omit(cohort2.la)
+summary(cohort2.la)
+
 cohort2.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort2.la$leaf.length)
+
+
+
 
 #first removes NA from the column of percet of each leaf missing (in some cases NA because there was no measurment was taken
 #then adds a column with the "corrected" leaf area (i.e., corrected leaf area - % missing) 
 cohort2.la$leaf.percentage.missing[is.na(cohort2.la$leaf.percentage.missing)] <- 0
 cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort2.la$uncorrected.leaf.area*(cohort2.la$leaf.percentage.missing/100))
 
-
+str(cohort2.la)
 
 
 
@@ -247,8 +251,8 @@ names(COHORT2.long)[10] <- "t4"
 
 
 #A little sorting, just to make it easier to visualize
-COHORT1.long<-COHORT1.long[with(COHORT1.long, order(sdlg.type, block, trt, sdlg.id.no)), ]
-COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.type, block, trt, sdlg.id.no)), ]
+COHORT1.long<-COHORT1.long[with(COHORT1.long, order(sdlg.id.no,sdlg.type, block, trt)), ]
+COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.id.no,sdlg.type, block, trt)), ]
 
 #################
 ###CALCLULATIONS OF RGR BAsed on Leaf Area
@@ -264,9 +268,18 @@ COHORT2.long$t4[COHORT2.long$t4== 0] <- NA
 # BUT IF THEY ARE STIL ALIVE AND HAVE NO LEAVES, then first calclulate RGR below, then convert the Inf answer to NA using the do.call lines below 
 
 COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
+#COHORT1.long[, "rgr5.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t5))/(COHORT1.long$days-365) #Cohort 1 year 2-3
 COHORT1.long[, "rgr1.4"] <-(log(COHORT1.long$t4)-log(COHORT1.long$t1))/COHORT1.long$days
-
 COHORT2.long[, "rgr1.4"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
+
+
+COHORT1.long[, "perc.chng.1.9"] <-((COHORT1.long$t9-COHORT1.long$t1)/COHORT1.long$t1)*100
+#COHORT1.long[, "perc.chng.5.9"] <-((COHORT1.long$t9-COHORT1.long$t5)/COHORT1.long$t5)*100 #Cohort 1 year 2-3
+COHORT1.long[, "perc.chng.1.4"] <-((COHORT1.long$t4-COHORT1.long$t1)/COHORT1.long$t1)*100
+COHORT2.long[, "perc.chng.1.4"] <-((COHORT2.long$t4-COHORT2.long$t1)/COHORT2.long$t1)*100
+
+
+
 
 # YOU ONLY NEED THESE IF THE ZEROS FOR PLANT LEAF AREA IN THE LAST TIME INTERVAL MEANS PLANTS SURVIVED BUT HAD NO LEAVES. 
 # COHORT1.long<-do.call(data.frame,lapply(COHORT1.long, function(x) replace(x, is.infinite(x),NA)))
@@ -285,6 +298,7 @@ hist(COHORT1.long$rgr1.9)
 hist(COHORT1.long$rgr1.4)
 
 hist(COHORT2.long$rgr1.4)
+
 #BOX PLOT INCLUDING ALL PLANTS 
 
 rgrALL1.4 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.4)) + 
@@ -300,6 +314,313 @@ rgrALL1.9
 rgrALL2 <- ggplot(COHORT2.long, aes(x=trt, y=rgr1.4)) + 
   geom_boxplot()
 rgrALL2
+
+
+
+
+#######PUTTING BOTH COHORTS TOGETHER
+
+LFAREA1<-COHORT1.long
+
+
+# DELETE UNECESSARY COLUMNS
+LFAREA1.1 <- LFAREA1[ -c(7:15, 18:19)]
+LFAREA1.2 <- LFAREA1[ -c(7:17)]
+
+
+str(LFAREA1.1)
+
+#COnvert each to long 
+foo<-gather(LFAREA1.1, "interval", "rgr.la", 7:8)  
+foo2<-gather(LFAREA1.2, "interval", "perc.chng.la", 7:8)
+foo3<-cbind(foo,foo2)
+foo3<- foo3[ -c(9:15)]
+#chnage the values of the cells
+foo3$interval <-as.character(foo3$interval) #need these because they are factors, covert to chars
+foo3$interval <- replace(foo3$interval, foo3$interval=="rgr1.9", "24 mos")
+foo3$interval <- replace(foo3$interval, foo3$interval=="rgr1.4", "12 mos")
+#delete interval 2
+str(foo3)
+
+# 
+# Cohort 2
+LFAREA2<-COHORT2.long
+
+# DELETE UNECESSARY COLUMNS
+LFAREA2.1 <- LFAREA2[ -c(7:10,12)]
+LFAREA2.2 <- LFAREA2[ -c(7:11)]
+str(LFAREA2.1)
+str(LFAREA2.2)
+
+#COnvert each to long 
+foo4<-gather(LFAREA2.1, "interval", "rgr.la", 7)  
+foo5<-gather(LFAREA2.2, "interval", "perc.chng.la", 7)
+foo6<-cbind(foo4,foo5)
+foo6<- foo6[ -c(9:15)]
+#chnage the values of the cells
+foo6$interval <-as.character(foo6$interval) #need these because they are factors, covert to chars
+foo6$interval <- replace(foo6$interval, foo6$interval=="rgr1.4", "12 mos")
+#delete interval 2
+str(foo3)
+str(foo6)
+foo7<-rbind(foo3,foo6)
+#add canopy
+foo7<-left_join(foo7,canopy[1:2], by = "block")
+foo7$cohort<-as.factor(foo7$cohort)
+#Reduce dataset: only include "focal" seedlings.
+
+
+Focal<-filter(foo7, sdlg.type == "focal")
+Focal<-droplevels(Focal)
+Focal<-filter(Focal, interval == "12 mos")
+Focal<-droplevels(Focal)
+aov1<-aov(rgr.la ~ trt+cohort+block, data = Focal)
+hist(foo7$rgr.la)
+# hist(foo7$perc.chng.la)
+summary(aov1)
+bmass1Fig <- ggplot(Focal, aes(x=cohort, y=rgr.la)) + 
+  geom_boxplot()
+bmass1Fig
+
+bmass1Fig <- ggplot(Focal, aes(x=cohort, y=perc.chng.la)) + 
+  geom_boxplot()
+bmass1Fig
+
+
+
+#################
+###CALCLULATIONS OF RGR BAsed on seedling height
+##################
+#rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
+
+# COHORT 1
+str(Exp_Data_C1)
+ht.cohort1<-Exp_Data_C1
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort1 <- ht.cohort1[ -c(7:158,169:181)]
+str(ht.cohort1)
+
+# CALC of RGR 
+ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
+ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
+
+ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, block, trt, sdlg.type)), ]
+str(ht.cohort1)
+summary(ht.cohort1)
+
+# COHORT 2
+str(Exp_Data_C2)
+ht.cohort2<-Exp_Data_C2
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
+
+# CALC of RGR 
+ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
+str(ht.cohort2)
+ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, block, trt, sdlg.type)), ]
+str(ht.cohort2)
+
+## LONG FORM THEN JOIN THEM
+# DELETE UNECESSARY COLUMNS
+ht.cohort1.1 <- ht.cohort1[ -c(8:16, 18)]
+ht.cohort1.2 <- ht.cohort1[ -c(8:17)]
+ht.cohort2 <- ht.cohort2[ -c(8:11)]
+#COnvert each to long 
+
+ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8)  
+ht.cohort1.2<-gather(ht.cohort1.2, "interval", "rgr.ht", 8)  
+ht.cohort2<-gather(ht.cohort2, "interval", "rgr.ht", 8)  
+
+#chnage the values of the cells
+ht.cohort1.1$interval <-as.character(ht.cohort1.1$interval) #need these because they are factors, covert to chars
+ht.cohort1.1$interval <- replace(ht.cohort1.1$interval, ht.cohort1.1$interval=="rgr.ht.1.4", "12 mos")
+
+#chnage the values of the cells
+ht.cohort1.2$interval <-as.character(ht.cohort1.2$interval) #need these because they are factors, covert to chars
+ht.cohort1.2$interval <- replace(ht.cohort1.2$interval, ht.cohort1.2$interval=="rgr.ht.1.9", "24 mos")
+
+
+#chnage the values of the cells
+ht.cohort2$interval <-as.character(ht.cohort2$interval) #need these because they are factors, covert to chars
+ht.cohort2$interval <- replace(ht.cohort2$interval, ht.cohort2$interval=="rgr.ht.1.4", "12 mos")
+str(ht.cohort1.1)
+str(ht.cohort1.2)
+str(ht.cohort2)
+all.height.rgr<-rbind(ht.cohort1.2,ht.cohort1.1,ht.cohort2)
+
+
+dim(all.height.rgr)
+dim(foo7)
+str(foo7)
+
+all.rgr<-cbind(foo7,all.height.rgr)
+all.rgr <- all.rgr[ -c(11:18)]
+
+plot(all.rgr$rgr.ht,all.rgr$rgr.la)
+
+
+
+
+
+
+###################################################
+######      ANALYSES - RGR  ###
+######################################################
+#Reduce dataset: only include "focal" seedlings.
+rgr.test<-filter(all.rgr, sdlg.type == "focal")
+rgr.test<-droplevels(rgr.test)
+
+
+#SIMPLER AS ANOVA
+aov.la<-aov(rgr.la ~ trt*cohort+block, data = rgr.test)
+summary(aov.la)
+
+aov.ht<-aov(rgr.ht ~ trt*cohort+block, data = rgr.test)
+summary(aov.ht)
+
+plot(rgr.test$canopy.openess.percent,rgr.test$rgr.ht)
+
+# GLM LA
+
+glm.1<-glm(rgr.la ~ block, family = gaussian, data = rgr.test)
+summary(glm.1)
+glm.2<-glm(rgr.la ~ trt+block, family = gaussian, data = rgr.test)
+summary(glm.2)
+glm.3<-glm(rgr.la ~ cohort+block, family = gaussian, data = rgr.test)
+summary(glm.3)
+glm.4<-glm(rgr.la ~ trt+cohort+block, family = gaussian, data = rgr.test)
+summary(glm.4)
+
+anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
+anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
+anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
+anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
+
+AIC(glm.1, glm.2, glm.3,glm.4)
+
+# GLM - Height
+
+glm.1<-glm(rgr.ht ~ block, family = gaussian, data = rgr.test)
+summary(glm.1)
+glm.2<-glm(rgr.ht ~ trt+block, family = gaussian, data = rgr.test)
+summary(glm.2)
+glm.3<-glm(rgr.ht ~ cohort+block, family = gaussian, data = rgr.test)
+summary(glm.3)
+glm.4<-glm(rgr.ht ~ trt+cohort+block, family = gaussian, data = rgr.test)
+summary(glm.4)
+
+anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
+anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
+anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
+anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
+
+AIC(glm.1, glm.2, glm.3,glm.4)
+
+
+###################################################
+######      ANALYSES - BMASS  ###
+######################################################
+
+bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
+bmass[, "Total.bmass"] <-bmass$root.biomass+bmass$lf.biomass+bmass$stem.biomass
+bmass<-full_join(bmass, canopy, by = "block")
+bmass$location<-NULL
+bmass$site.openess.percent<-NULL
+bmass$mask.openess.percent<-NULL
+bmass$sky.area.percent<-NULL
+bmass$LAI.4.ring<-NULL 
+bmass$LAI.5.ring<-NULL
+str(bmass)
+
+glm.1<-glm(Total.bmass ~ block, family = identity, data = bmass)
+summary(glm.1)
+glm.2<-glm(Total.bmass ~ trt+block, family = log, data = bmass)
+summary(glm.2)
+glm.3<-glm(Total.bmass ~ cohort+block, family = log, data = bmass)
+summary(glm.3)
+glm.4<-glm(Total.bmass ~ trt+cohort+block, family = log, data = bmass)
+summary(glm.4)
+
+anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
+anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
+anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
+# anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
+
+AIC(glm.1, glm.2, glm.3,glm.4)
+
+#SIMPLER AS ANOVA
+aov.bm<-aov(RSratio ~ trt*cohort+block, data = bmass)
+summary(aov.bm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# logit trasnform, but actually don't do this...
+# bmass<-bmass[, "logitRS"] <-log10(bmass$RSratio+/(1-bmass$RSratio))
+
+
+
+# SPlit the cohorts 
+bmass.1<-filter(bmass, cohort == "1")
+bmass.1<-droplevels(bmass.1)
+str(bmass.1)
+hist(bmass.1$RSratio)
+aov.bmass.1<-aov(RSratio ~ trt+block, data = bmass.1)
+summary(aov.bmass.1)
+
+
+bmass.2<-filter(bmass, cohort == "2")
+bmass.2<-droplevels(bmass.2)
+hist(bmass.2$RSratio)
+aov.bmass.2<-aov(RSratio ~ trt+block, data = bmass.2)
+summary(aov.bmass.2)
+
+
+# Graph 
+bmass1Fig <- ggplot(bmass.1, aes(x=trt, y=RSratio)) + 
+  geom_boxplot()
+bmass1Fig
+
+bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) + 
+  geom_boxplot()
+bmass2Fig
+
+# BOX PLOTS
+boxplot(rgr.ht.1.4~trt,data=ht.cohort2) #Cohort 2 1.4
+boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###################################################
@@ -392,22 +713,20 @@ bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) +
   geom_boxplot()
 bmass2Fig
 
-#################
-###CALCLULATIONS OF RGR BAsed on seedling height
-##################
-#rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
 
-# COHORT 1
-str(Exp_Data_C1)
-ht.cohort1<-Exp_Data_C1
+# BOX PLOTS
+boxplot(rgr.ht.1.4~trt,data=ht.cohort2) #Cohort 2 1.4
+boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
 
-# DELETE UNECESSARY COLUMNS
-ht.cohort1 <- ht.cohort1[ -c(7:158,169:181)]
-str(ht.cohort1)
 
-# CALC of RGR 
-ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
-ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
+# ANOVA
+ht.cohort2.focal<-filter(ht.cohort2, sdlg.type == "focal")
+ht.cohort2.focal<-droplevels(ht.cohort2.focal)
+
+boxplot(ht.4~trt,data=ht.cohort2.focal) #Cohort 1 ht focal final after 4
+
+aov.C2.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort2.focal)
+summary(aov.C2.14)
 
 # BOX PLOTS
 boxplot(rgr.ht.1.4~block,data=ht.cohort1) #Cohort 1 1.4
@@ -432,33 +751,29 @@ aov.C1.19<-aov(rgr.ht.1.9 ~ trt+block, data = ht.cohort1.focal)
 summary(aov.C1.19)
 
 
-# COHORT 2
-str(Exp_Data_C2)
-ht.cohort2<-Exp_Data_C2
-
-# DELETE UNECESSARY COLUMNS
-ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
-
-# CALC of RGR 
-ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
-str(ht.cohort2)
-
-# BOX PLOTS
-boxplot(rgr.ht.1.4~block,data=ht.cohort2) #Cohort 2 1.4
-boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
-
-
-# ANOVA
-ht.cohort2.focal<-filter(ht.cohort2, sdlg.type == "focal")
-ht.cohort2.focal<-droplevels(ht.cohort2.focal)
-
-boxplot(ht.4~trt,data=ht.cohort2.focal) #Cohort 1 ht focal final after 4
-
-aov.C2.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort2.focal)
-summary(aov.C2.14)
 
 
 ############
 
-# SINGLE DATAFRAME FOR ALL DATA
+
+# SEEDLINGS FROM THE DEMOG PLOTS
+# #NEED TO IDENTIFY WHICH IS THE ONE THAT IS THE FOCAL ONE IN THE PAIR!!!
+
+
+plot.sdlgs<-read.csv("demog_plot_sdlgs.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
+plot.sdlgs[, "rgr.ht.0809"] <-(log(plot.sdlgs$ht.2009)-log(plot.sdlgs$ht.2008))/365
+plot.sdlgs[, "rgr.ht.0810"] <-(log(plot.sdlgs$ht.2010)-log(plot.sdlgs$ht.2008))/365
+
+boxplot(rgr.ht.0810~trt,data=plot.sdlgs) #08 sdeedlings rgr 0810
+boxplot(ht.2010~trt,data=plot.sdlgs) #08 sflgs final ht 2010
+
+
+
+aov.plot.0810<-aov(rgr.ht.0810 ~ trt+light, data = plot.sdlgs)
+summary(aov.plot.0810)
+
+plot(plot.sdlgs$light,plot.sdlgs$rgr.ht.0810)
+
+
+
 
