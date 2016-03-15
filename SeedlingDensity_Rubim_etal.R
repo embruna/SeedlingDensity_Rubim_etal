@@ -198,12 +198,13 @@ str(cohort2.la)
 
 #Aggregate data: summed the leaf-areas for each plant in each sampling interval
 COHORT1<-aggregate(cohort1.la$corrected.leaf.area, by=list(cohort1.la$cohort, cohort1.la$block, 
-                    cohort1.la$trt, cohort1.la$sdlg.type,cohort1.la$seedling.id.no, cohort1.la$interval,cohort1.la$days), 
+                    cohort1.la$trt, cohort1.la$sdlg.type,cohort1.la$seedling.id.no,  cohort1.la$interval,cohort1.la$days), 
                     FUN=sum, na.rm=TRUE)
 #rename the columns
 names(COHORT1)[1] <- "cohort"
 names(COHORT1)[2] <- "block"
 names(COHORT1)[3] <- "trt"
+
 names(COHORT1)[4] <- "sdlg.type"
 names(COHORT1)[5] <- "sdlg.id.no"
 names(COHORT1)[6] <- "interval"
@@ -228,31 +229,31 @@ names(COHORT2)[8] <- "leaf.area"
 COHORT2
 
 #using reshape2 to cast the data back into wide form to calclulate RGR (its a data frame, hence dcast)
-COHORT1.long<- dcast(COHORT1, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
-COHORT2.long<- dcast(COHORT2, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
+COHORT1.wide<- dcast(COHORT1, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
+COHORT2.wide<- dcast(COHORT2, cohort + block + trt + sdlg.type + sdlg.id.no + days ~ interval)
 
 
 #Sigh. Have to rename the columes of the intervals, it's just easier than remembering to use "1" in all formulas
 #renaming columsn cohort 1
-names(COHORT1.long)[7] <- "t1"
-names(COHORT1.long)[8] <- "t2"
-names(COHORT1.long)[9] <- "t3"
-names(COHORT1.long)[10] <- "t4"
-names(COHORT1.long)[11] <- "t5"
-names(COHORT1.long)[12] <- "t6"
-names(COHORT1.long)[13] <- "t7"
-names(COHORT1.long)[14] <- "t8"
-names(COHORT1.long)[15] <- "t9"
+names(COHORT1.wide)[7] <- "LAt1"
+names(COHORT1.wide)[8] <- "LAt2"
+names(COHORT1.wide)[9] <- "LAt3"
+names(COHORT1.wide)[10] <- "LAt4"
+names(COHORT1.wide)[11] <- "LAt5"
+names(COHORT1.wide)[12] <- "LAt6"
+names(COHORT1.wide)[13] <- "LAt7"
+names(COHORT1.wide)[14] <- "LAt8"
+names(COHORT1.wide)[15] <- "LAt9"
 #renaming columns cohort 2
-names(COHORT2.long)[7] <- "t1"
-names(COHORT2.long)[8] <- "t2"
-names(COHORT2.long)[9] <- "t3"
-names(COHORT2.long)[10] <- "t4"
+names(COHORT2.wide)[7] <- "LAt1"
+names(COHORT2.wide)[8] <- "LAt2"
+names(COHORT2.wide)[9] <- "LAt3"
+names(COHORT2.wide)[10] <- "LAt4"
 
 
 #A little sorting, just to make it easier to visualize
-COHORT1.long<-COHORT1.long[with(COHORT1.long, order(sdlg.id.no,sdlg.type, block, trt)), ]
-COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.id.no,sdlg.type, block, trt)), ]
+COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no,sdlg.type, block, trt)), ]
+COHORT2.wide<-COHORT2.wide[with(COHORT2.wide, order(sdlg.id.no,sdlg.type, block, trt)), ]
 
 #################
 ###CALCLULATIONS OF RGR BAsed on Leaf Area
@@ -262,73 +263,401 @@ COHORT2.long<-COHORT2.long[with(COHORT2.long, order(sdlg.id.no,sdlg.type, block,
 # NEED TO FIGURE OUT WHIHC OF THESE IS TRUE - ARE PLANTS WITH ZERO IN LAST COLUMN ALIVE OR DEAD???
 # Some of the plants had a leaf area of "0" in the last measuremnt
 # If this means the plant is dead, then use this to convert those values to NA so that they don't mess up the calclulation of RGR
-COHORT1.long$t9[COHORT1.long$t9== 0] <- NA
-COHORT2.long$t4[COHORT2.long$t4== 0] <- NA
+COHORT1.wide$LAt9[COHORT1.wide$LAt9== 0] <- NA
+COHORT2.wide$LAt4[COHORT2.wide$LAt4== 0] <- NA
 
 # BUT IF THEY ARE STIL ALIVE AND HAVE NO LEAVES, then first calclulate RGR below, then convert the Inf answer to NA using the do.call lines below 
 
-COHORT1.long[, "rgr1.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t1))/COHORT1.long$days
-#COHORT1.long[, "rgr5.9"] <-(log(COHORT1.long$t9)-log(COHORT1.long$t5))/(COHORT1.long$days-365) #Cohort 1 year 2-3
-COHORT1.long[, "rgr1.4"] <-(log(COHORT1.long$t4)-log(COHORT1.long$t1))/COHORT1.long$days
-COHORT2.long[, "rgr1.4"] <-(log(COHORT2.long$t4)-log(COHORT2.long$t1))/COHORT2.long$days
+COHORT1.wide[, "rgrLA_wet1"] <-(log(COHORT1.wide$LAt3)-log(COHORT1.wide$LAt1))/84 #t1-t3
+COHORT1.wide[, "rgrLA_dry1"] <-(log(COHORT1.wide$LAt5)-log(COHORT1.wide$LAt3))/(282-84) #t3-t5
+COHORT1.wide[, "rgrLA_wet2"] <-(log(COHORT1.wide$LAt7)-log(COHORT1.wide$LAt5))/(495-282) #t5-t7
+COHORT1.wide[, "rgrLA_dry2"] <-(log(COHORT1.wide$LAt8)-log(COHORT1.wide$LAt7))/(684-495) #t7-t8
+COHORT1.wide[, "rgrLA_wet3"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt8))/(COHORT1.wide$days-684) #t7-t8
+COHORT1.wide[, "rgrLA_yr1"] <-(log(COHORT1.wide$LAt6)-log(COHORT1.wide$LAt1))/369    #5 08 march 08 - 29  march 09 
+COHORT1.wide[, "rgrLA_yr2"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt6))/(COHORT1.wide$days-396) #March 8 08 
+COHORT1.wide[, "rgrLA_2yrs"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt1))/COHORT1.wide$days 
 
-
-COHORT1.long[, "perc.chng.1.9"] <-((COHORT1.long$t9-COHORT1.long$t1)/COHORT1.long$t1)*100
-#COHORT1.long[, "perc.chng.5.9"] <-((COHORT1.long$t9-COHORT1.long$t5)/COHORT1.long$t5)*100 #Cohort 1 year 2-3
-COHORT1.long[, "perc.chng.1.4"] <-((COHORT1.long$t4-COHORT1.long$t1)/COHORT1.long$t1)*100
-COHORT2.long[, "perc.chng.1.4"] <-((COHORT2.long$t4-COHORT2.long$t1)/COHORT2.long$t1)*100
-
-
+COHORT2.wide[, "rgrLA_wet2"] <-(log(COHORT2.wide$LAt2)-log(COHORT2.wide$LAt1))/91
+COHORT2.wide[, "rgrLA_dry2"] <-(log(COHORT2.wide$LAt3)-log(COHORT2.wide$LAt1))/(280-91)
+COHORT2.wide[, "rgrLA_wet3"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt3))/(COHORT2.wide$days-280)
+COHORT2.wide[, "rgrLA_yr2"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt1))/COHORT2.wide$days
 
 
 # YOU ONLY NEED THESE IF THE ZEROS FOR PLANT LEAF AREA IN THE LAST TIME INTERVAL MEANS PLANTS SURVIVED BUT HAD NO LEAVES. 
-# COHORT1.long<-do.call(data.frame,lapply(COHORT1.long, function(x) replace(x, is.infinite(x),NA)))
-# COHORT2.long<-do.call(data.frame,lapply(COHORT1.long, function(x) replace(x, is.infinite(x),NA)))
+# COHORT1.wide<-do.call(data.frame,lapply(COHORT1.wide, function(x) replace(x, is.infinite(x),NA)))
+# COHORT2.wide<-do.call(data.frame,lapply(COHORT1.wide, function(x) replace(x, is.infinite(x),NA)))
 
-str(COHORT1.long)
-summary(COHORT1.long)
+# str(COHORT1.wide)
+# summary(COHORT1.wide)
 
 # Box plot of median leaf area of plants in each block at T1 
-boxplot(t1~block,data=COHORT1.long) #Cohort 1
-boxplot(t1~block,data=COHORT2.long) #Cohort2
+boxplot(LAt1~block,data=COHORT1.wide) #Cohort 1
+boxplot(LAt1~block,data=COHORT2.wide) #Cohort2
 
-
-hist(COHORT1.long$rgr1.9)
-
-hist(COHORT1.long$rgr1.4)
-
-hist(COHORT2.long$rgr1.4)
+hist(COHORT1.wide$rgrLA_2yrs)
+hist(COHORT1.wide$rgrLA_yr1)
+hist(COHORT2.wide$rgrLA_yr2)
 
 #BOX PLOT INCLUDING ALL PLANTS 
 
-rgrALL1.4 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.4)) + 
-  geom_boxplot()
-rgrALL1.4
+# rgrALL1.6 <- ggplot(COHORT1.wide, aes(x=trt, y=rgrLA_yr1)) + 
+#   geom_boxplot()
+# rgrALL1.6
+# 
+# rgrALL1.9 <- ggplot(COHORT1.wide, aes(x=trt, y=rgrLA_2yrs)) + 
+#   geom_boxplot()
+# rgrALL1.9
+# 
+# rgrALL2 <- ggplot(COHORT2.wide, aes(x=trt, y=rgrLA_yr2)) + 
+#   geom_boxplot()
+# rgrALL2
 
 
-rgrALL1.9 <- ggplot(COHORT1.long, aes(x=trt, y=rgr1.9)) + 
-  geom_boxplot()
-rgrALL1.9
+####### PUTTING BOTH COHORTS TOGETHER - RGR #######
+# Cohort 1
+LFAREA_1_RGR<-COHORT1.wide
+LFAREA_1_RGR <- LFAREA_1_RGR[ -c(7:15)]
+LFAREA_1_RGR<-gather(LFAREA_1_RGR, "interval", "rgr.la", 7:14)  
+
+# Cohort 2
+LFAREA_2_RGR<-COHORT2.wide
+LFAREA_2_RGR <- LFAREA_2_RGR[ -c(7:10)]
+LFAREA_2_RGR<-gather(LFAREA_2_RGR, "interval", "rgr.la", 7:10)  
+# str(LFAREA_1_RGR)
+# str(LFAREA_2_RGR)
+
+#Bind the 2
+LARGR_BOTH<-rbind(LFAREA_1_RGR,LFAREA_2_RGR)
+LARGR_BOTH[, "season"] <-0
+LARGR_BOTH[, "year"] <-0
+LARGR_BOTH[, "duration"] <-0
+
+LARGR_BOTH$interval <- as.character(LARGR_BOTH$interval)
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet1' ] <- 'rainy')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet2' ] <- 'rainy')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet3' ] <- 'rainy')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry1' ] <- 'dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry2' ] <- 'dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr1' ] <- 'rainy+dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr2' ] <- 'rainy+dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_2yrs' ] <- 'rainy+dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_1yr' ] <- 'rainy+dry')
+
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet1' ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_dry1' ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet2' ] <- '2009')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_dry2' ] <- '2009')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet3' ] <- '2010')
+
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr1' & cohort == 1  ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr2' & cohort == 1] <- '2009+2010')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_1yr' & cohort == 1 ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr2' & cohort == 2] <- '2009+2010')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_2yrs' ] <- '2008-2010')
+LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_1yr'] <- '2009+2010')
+
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1'] <- "12 mos") 
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2'] <- "12 mos") 
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_1yr'] <- "12 mos") 
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_2yrs'] <- "24 mos")  
+
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "3 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "3 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet2'] <- "6 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet3'] <- "4 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry1'] <- "7 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry2'] <- "6 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1'] <- "12 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2'] <- "12 mos")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_1yr'] <- "10 mos")
+
+# COnvert back to factors
+LARGR_BOTH$interval <- as.factor(LARGR_BOTH$interval)
+LARGR_BOTH$season <- as.factor(LARGR_BOTH$season)
+LARGR_BOTH$year <- as.factor(LARGR_BOTH$year)
+LARGR_BOTH$duration <- as.factor(LARGR_BOTH$duration)
+summary(LARGR_BOTH)
+str(LARGR_BOTH)
 
 
-rgrALL2 <- ggplot(COHORT2.long, aes(x=trt, y=rgr1.4)) + 
-  geom_boxplot()
-rgrALL2
+#################
+###CALCLULATIONS OF RGR BAsed on seedling height
+##################
+#rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
+
+# COHORT 1
+str(ht.cohort2)
+ht.cohort1<-Exp_Data_C1
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort1 <- ht.cohort1[ -c(7:158,169:181)]
+
+ht.cohort2<-Exp_Data_C2
+# DELETE UNECESSARY COLUMNS
+ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
+
+# CALC of RGR 
+
+
+ht.cohort1[, "rgrHT_wet1"] <-(log(ht.cohort1$ht.3)-log(ht.cohort1$ht.1))/84 #t1-t3
+ht.cohort1[, "rgrHT_dry1"] <-(log(ht.cohort1$ht.5)-log(ht.cohort1$ht.3))/(282-84) #t3-t5
+ht.cohort1[, "rgrHT_wet2"] <-(log(ht.cohort1$ht.7)-log(ht.cohort1$ht.5))/(495-282) #t5-t7
+ht.cohort1[, "rgrHT_dry2"] <-(log(ht.cohort1$ht.8)-log(ht.cohort1$ht.7))/(684-495) #t7-t8
+ht.cohort1[, "rgrHT_wet3"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.8))/(ht.cohort1$days-684) #t7-t8
+ht.cohort1[, "rgrHT_yr1"] <-(log(ht.cohort1$ht.6)-log(ht.cohort1$ht.1))/369    #5 08 march 08 - 29  march 09 
+ht.cohort1[, "rgrHT_yr2"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.6))/(ht.cohort1$days-396) #March 8 08 
+ht.cohort1[, "rgrHT_2yrs"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days 
+
+ht.cohort2[, "rgrHT_wet2"] <-(log(ht.cohort2$ht.2)-log(ht.cohort2$ht.1))/91
+ht.cohort2[, "rgrHT_dry2"] <-(log(ht.cohort2$ht.3)-log(ht.cohort2$ht.1))/(280-91)
+ht.cohort2[, "rgrHT_wet3"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.3))/(ht.cohort2$days-280)
+ht.cohort2[, "rgrHT_yr2"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
+
+
+
+ht.cohort1.1 <- ht.cohort1[ -c(8:16)]
+ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8:15)  
+
+ht.cohort2.1 <- ht.cohort2[ -c(8:11)]
+ht.cohort2.1<-gather(ht.cohort2.1, "interval", "rgr.ht", 8:11)  
+
+str(ht.cohort1.1)
+str(ht.cohort2.1)
+
+
+HTRGR_BOTH<-rbind(ht.cohort1.1,ht.cohort2.1)
+HTRGR_BOTH[, "season"] <-0
+HTRGR_BOTH[, "year"] <-0
+HTRGR_BOTH[, "duration"] <-0
+
+HTRGR_BOTH$interval <- as.character(HTRGR_BOTH$interval)
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet1' ] <- 'rainy')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet2' ] <- 'rainy')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet3' ] <- 'rainy')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry1' ] <- 'dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry2' ] <- 'dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr1' ] <- 'rainy+dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr2' ] <- 'rainy+dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_2yrs' ] <- 'rainy+dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_1yr' ] <- 'rainy+dry')
+
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet1' ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_dry1' ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet2' ] <- '2009')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_dry2' ] <- '2009')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet3' ] <- '2010')
+
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr1' & cohort == 1  ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr2' & cohort == 1] <- '2009+2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_1yr' & cohort == 1 ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr2' & cohort == 2] <- '2009+2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_2yrs' ] <- '2008-2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_1yr'] <- '2009+2010')
+
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1'] <- "12 mos") 
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2'] <- "12 mos") 
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_1yr'] <- "12 mos") 
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_2yrs'] <- "24 mos")  
+
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "3 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "3 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet2'] <- "6 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet3'] <- "4 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry1'] <- "7 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry2'] <- "6 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1'] <- "12 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2'] <- "12 mos")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_1yr'] <- "10 mos")
+
+# COnvert back to factors
+HTRGR_BOTH$interval <- as.factor(HTRGR_BOTH$interval)
+HTRGR_BOTH$season <- as.factor(HTRGR_BOTH$season)
+HTRGR_BOTH$year <- as.factor(HTRGR_BOTH$year)
+HTRGR_BOTH$duration <- as.factor(HTRGR_BOTH$duration)
+summary(HTRGR_BOTH)
+str(HTRGR_BOTH)
+
+
+HTRGR_BOTH<-HTRGR_BOTH[with(HTRGR_BOTH, order(block, trt, sdlg.type,seedling.id.no, decreasing = FALSE)), ]
+LARGR_BOTH<-LARGR_BOTH[with(LARGR_BOTH, order(block, trt, sdlg.type,sdlg.id.no, decreasing = FALSE)), ]
+str(HTRGR_BOTH)
+# summary(ht.cohort2)
+summary(LARGR_BOTH)
+
+###################################################
+######      ANALYSES - RGR  ###
+######################################################
+#Reduce dataset: only include "focal" seedlings.
+str(LARGR_BOTH)
+rgr.test<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "12 mos")
+is.na(rgr.test) <- do.call(cbind,lapply(rgr.test, is.infinite))
+rgr.test<-na.omit(rgr.test)
+rgr.test<-droplevels(rgr.test)
+
+
+#SIMPLER AS ANOVA
+aov.la<-aov(rgr.la ~ trt*cohort*year+block, data = rgr.test)
+summary(aov.la)
 
 
 
 
-#######PUTTING BOTH COHORTS TOGETHER
 
-LFAREA1<-COHORT1.long
+
+aov.ht<-aov(rgr.ht ~ trt*cohort+block, data = rgr.test)
+summary(aov.ht)
+
+plot(rgr.test$canopy.openess.percent,rgr.test$rgr.ht)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
+ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
+
+ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, block, trt, sdlg.type)), ]
+str(ht.cohort1)
+summary(ht.cohort1)
+
+# COHORT 2
+str(Exp_Data_C2)
+ht.cohort2<-Exp_Data_C2
+
+# DELETE UNECESSARY COLUMNS
+ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
+
+# CALC of RGR 
+ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
+str(ht.cohort2)
+ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, block, trt, sdlg.type)), ]
+str(ht.cohort2)
+
+## LONG FORM THEN JOIN THEM
+# DELETE UNECESSARY COLUMNS
+ht.cohort1.1 <- ht.cohort1[ -c(8:16, 18)]
+ht.cohort1.2 <- ht.cohort1[ -c(8:17)]
+ht.cohort2 <- ht.cohort2[ -c(8:11)]
+#COnvert each to long 
+
+ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8)  
+ht.cohort1.2<-gather(ht.cohort1.2, "interval", "rgr.ht", 8)  
+ht.cohort2<-gather(ht.cohort2, "interval", "rgr.ht", 8)  
+
+#chnage the values of the cells
+ht.cohort1.1$interval <-as.character(ht.cohort1.1$interval) #need these because they are factors, covert to chars
+ht.cohort1.1$interval <- replace(ht.cohort1.1$interval, ht.cohort1.1$interval=="rgr.ht.1.4", "12 mos")
+
+#chnage the values of the cells
+ht.cohort1.2$interval <-as.character(ht.cohort1.2$interval) #need these because they are factors, covert to chars
+ht.cohort1.2$interval <- replace(ht.cohort1.2$interval, ht.cohort1.2$interval=="rgr.ht.1.9", "24 mos")
+
+
+#chnage the values of the cells
+ht.cohort2$interval <-as.character(ht.cohort2$interval) #need these because they are factors, covert to chars
+ht.cohort2$interval <- replace(ht.cohort2$interval, ht.cohort2$interval=="rgr.ht.1.4", "12 mos")
+str(ht.cohort1.1)
+str(ht.cohort1.2)
+str(ht.cohort2)
+all.height.rgr<-rbind(ht.cohort1.2,ht.cohort1.1,ht.cohort2)
+
+
+dim(all.height.rgr)
+dim(foo7)
+str(foo7)
+
+all.rgr<-cbind(foo7,all.height.rgr)
+all.rgr <- all.rgr[ -c(11:18)]
+
+plot(all.rgr$rgr.ht,all.rgr$rgr.la)
+plot(all.rgr$rgr.ht,all.rgr$rgr.la)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+####### PUTTING BOTH COHORTS TOGETHER - LA #######
+# Cohort 1
+LFAREA_1_LA<-COHORT1.wide
+LFAREA_1_LA <- LFAREA1[ -c(16:23)]
+LFAREA_1_LA<-gather(LFAREA_1_LA, "interval", "rgr.la", 7:15)  
+
+# Cohort 2
+LFAREA_2_LA<-COHORT2.wide
+LFAREA_2_LA <- LFAREA2[ -c(11:14)]
+LFAREA_2_LA<-gather(LFAREA_2_LA, "interval", "rgr.la", 7:10)  
+# str(LFAREA_1_LA)
+# str(LFAREA_2_LA)
+
+#Bind the 2
+LA_BOTH<-rbind(LFAREA_1_LA,LFAREA_2_LA)
+
+
+
+
+
+
 
 
 # DELETE UNECESSARY COLUMNS
 LFAREA1.1 <- LFAREA1[ -c(7:15, 18:19)]
-LFAREA1.2 <- LFAREA1[ -c(7:17)]
-
-
-str(LFAREA1.1)
+# LFAREA1.2 <- LFAREA1[ -c(7:17)]
+# str(LFAREA1.1)
 
 #COnvert each to long 
 foo<-gather(LFAREA1.1, "interval", "rgr.la", 7:8)  
@@ -344,7 +673,7 @@ str(foo3)
 
 # 
 # Cohort 2
-LFAREA2<-COHORT2.long
+LFAREA2<-COHORT2.wide
 
 # DELETE UNECESSARY COLUMNS
 LFAREA2.1 <- LFAREA2[ -c(7:10,12)]
@@ -458,6 +787,7 @@ str(foo7)
 all.rgr<-cbind(foo7,all.height.rgr)
 all.rgr <- all.rgr[ -c(11:18)]
 
+plot(all.rgr$rgr.ht,all.rgr$rgr.la)
 plot(all.rgr$rgr.ht,all.rgr$rgr.la)
 
 
@@ -631,7 +961,7 @@ boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
 
 # COHORT ONE
 #Reduce dataset: only include "focal" seedlings.
-Focal.One<-filter(COHORT1.long, sdlg.type == "focal")
+Focal.One<-filter(COHORT1.wide, sdlg.type == "focal")
 Focal.One<-droplevels(Focal.One)
 Focal.One<-full_join(Focal.One, canopy, by = "block")
 summary(Focal.One)
@@ -662,7 +992,7 @@ plot(Focal.One$canopy.openess.percent, Focal.One$rgr1.9)
 
 # COHORT TWO
 #Reduce dataset: only include "focal" seedlings.
-Focal.Two<-filter(COHORT2.long, sdlg.type == "focal")
+Focal.Two<-filter(COHORT2.wide, sdlg.type == "focal")
 Focal.Two<-droplevels(Focal.Two)
 Focal.Two<-full_join(Focal.Two, canopy, by = "block")
 summary(Focal.Two)
