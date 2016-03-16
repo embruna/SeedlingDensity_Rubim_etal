@@ -275,12 +275,12 @@ COHORT1.wide[, "rgrLA_dry2"] <-(log(COHORT1.wide$LAt8)-log(COHORT1.wide$LAt7))/(
 COHORT1.wide[, "rgrLA_wet3"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt8))/(COHORT1.wide$days-684) #t7-t8
 COHORT1.wide[, "rgrLA_yr1"] <-(log(COHORT1.wide$LAt6)-log(COHORT1.wide$LAt1))/369    #5 08 march 08 - 29  march 09 
 COHORT1.wide[, "rgrLA_yr2"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt6))/(COHORT1.wide$days-396) #March 8 08 
-COHORT1.wide[, "rgrLA_2yrs"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt1))/COHORT1.wide$days 
+COHORT1.wide[, "rgrLA_yrs1-2"] <-(log(COHORT1.wide$LAt9)-log(COHORT1.wide$LAt1))/COHORT1.wide$days 
 
 COHORT2.wide[, "rgrLA_wet2"] <-(log(COHORT2.wide$LAt2)-log(COHORT2.wide$LAt1))/91
 COHORT2.wide[, "rgrLA_dry2"] <-(log(COHORT2.wide$LAt3)-log(COHORT2.wide$LAt1))/(280-91)
 COHORT2.wide[, "rgrLA_wet3"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt3))/(COHORT2.wide$days-280)
-COHORT2.wide[, "rgrLA_yr2"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt1))/COHORT2.wide$days
+COHORT2.wide[, "rgrLA_yr1"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt1))/COHORT2.wide$days
 
 
 # YOU ONLY NEED THESE IF THE ZEROS FOR PLANT LEAF AREA IN THE LAST TIME INTERVAL MEANS PLANTS SURVIVED BUT HAD NO LEAVES. 
@@ -294,9 +294,9 @@ COHORT2.wide[, "rgrLA_yr2"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt1))/CO
 boxplot(LAt1~block,data=COHORT1.wide) #Cohort 1
 boxplot(LAt1~block,data=COHORT2.wide) #Cohort2
 
-hist(COHORT1.wide$rgrLA_2yrs)
-hist(COHORT1.wide$rgrLA_yr1)
-hist(COHORT2.wide$rgrLA_yr2)
+# hist(COHORT1.wide$rgrLA_2yrs)
+# hist(COHORT1.wide$rgrLA_yr1)
+# hist(COHORT2.wide$rgrLA_yr2)
 
 #BOX PLOT INCLUDING ALL PLANTS 
 
@@ -329,7 +329,8 @@ LFAREA_2_RGR<-gather(LFAREA_2_RGR, "interval", "rgr.la", 7:10)
 #Bind the 2
 LARGR_BOTH<-rbind(LFAREA_1_RGR,LFAREA_2_RGR)
 LARGR_BOTH[, "season"] <-0
-LARGR_BOTH[, "year"] <-0
+LARGR_BOTH[, "calendar_year"] <-0
+LARGR_BOTH[, "cohort_year"] <-0
 LARGR_BOTH[, "duration"] <-0
 
 LARGR_BOTH$interval <- as.character(LARGR_BOTH$interval)
@@ -338,43 +339,53 @@ LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet2' ] <- 'rainy')
 LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet3' ] <- 'rainy')
 LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry1' ] <- 'dry')
 LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry2' ] <- 'dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr1' ] <- 'rainy+dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr2' ] <- 'rainy+dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_2yrs' ] <- 'rainy+dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_1yr' ] <- 'rainy+dry')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr1' ] <- '1R1D')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr2' ] <- '2R1D')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yrs1-2' ] <- '3R2D')
+LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_1yr' ] <- '2R1D')
 
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet1' ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_dry1' ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet2' ] <- '2009')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_dry2' ] <- '2009')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_wet3' ] <- '2010')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet1' ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_dry1' ] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet2' ] <- '2009')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_dry2' ] <- '2009')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet3' ] <- '2010')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr1'  & cohort == 1] <- '2008')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr2'  & cohort == 1] <- '2009-2010')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yrs1-2'] <- '2008-2010')
+LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr1'  & cohort == 2] <- '2009-2010')
 
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr1' & cohort == 1  ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr2' & cohort == 1] <- '2009+2010')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_1yr' & cohort == 1 ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_yr2' & cohort == 2] <- '2009+2010')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_2yrs' ] <- '2008-2010')
-LARGR_BOTH <- within(LARGR_BOTH, year[interval == 'rgrLA_1yr'] <- '2009+2010')
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet2'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet3'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry1'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry2'] <- "seasonal")
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1' & cohort == 1  ] <- 'annual')
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2' & cohort == 1  ] <- 'annual')
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1' & cohort == 2  ] <- 'annual')
+LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yrs1-2' & cohort == 1] <- 'multiyear')
 
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1'] <- "12 mos") 
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2'] <- "12 mos") 
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_1yr'] <- "12 mos") 
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_2yrs'] <- "24 mos")  
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet1' & cohort == 1  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry1' & cohort == 1  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet2' & cohort == 1  ] <- 'cohort_yr_2')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry2' & cohort == 1  ] <- 'cohort_yr_2')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet3' & cohort == 1  ] <- 'cohort_yr_2')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet2' & cohort == 2  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry2' & cohort == 2  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet3' & cohort == 2  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr1' & cohort == 1  ] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr2' & cohort == 1] <- 'cohort_yr_2')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr1' & cohort == 2] <- 'cohort_yr_1')
+LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
 
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "3 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "3 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet2'] <- "6 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet3'] <- "4 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry1'] <- "7 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry2'] <- "6 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1'] <- "12 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2'] <- "12 mos")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_1yr'] <- "10 mos")
+
+
 
 # COnvert back to factors
 LARGR_BOTH$interval <- as.factor(LARGR_BOTH$interval)
 LARGR_BOTH$season <- as.factor(LARGR_BOTH$season)
-LARGR_BOTH$year <- as.factor(LARGR_BOTH$year)
+LARGR_BOTH$calendar_year <- as.factor(LARGR_BOTH$calendar_year)
+LARGR_BOTH$cohort_year <- as.factor(LARGR_BOTH$cohort_year)
 LARGR_BOTH$duration <- as.factor(LARGR_BOTH$duration)
 summary(LARGR_BOTH)
 str(LARGR_BOTH)
@@ -386,7 +397,7 @@ str(LARGR_BOTH)
 #rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
 
 # COHORT 1
-str(ht.cohort2)
+
 ht.cohort1<-Exp_Data_C1
 
 # DELETE UNECESSARY COLUMNS
@@ -406,13 +417,12 @@ ht.cohort1[, "rgrHT_dry2"] <-(log(ht.cohort1$ht.8)-log(ht.cohort1$ht.7))/(684-49
 ht.cohort1[, "rgrHT_wet3"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.8))/(ht.cohort1$days-684) #t7-t8
 ht.cohort1[, "rgrHT_yr1"] <-(log(ht.cohort1$ht.6)-log(ht.cohort1$ht.1))/369    #5 08 march 08 - 29  march 09 
 ht.cohort1[, "rgrHT_yr2"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.6))/(ht.cohort1$days-396) #March 8 08 
-ht.cohort1[, "rgrHT_2yrs"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days 
+ht.cohort1[, "rgrHT_yrs1-2"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days 
 
 ht.cohort2[, "rgrHT_wet2"] <-(log(ht.cohort2$ht.2)-log(ht.cohort2$ht.1))/91
 ht.cohort2[, "rgrHT_dry2"] <-(log(ht.cohort2$ht.3)-log(ht.cohort2$ht.1))/(280-91)
 ht.cohort2[, "rgrHT_wet3"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.3))/(ht.cohort2$days-280)
-ht.cohort2[, "rgrHT_yr2"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
-
+ht.cohort2[, "rgrHT_yr1"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
 
 
 ht.cohort1.1 <- ht.cohort1[ -c(8:16)]
@@ -427,52 +437,64 @@ str(ht.cohort2.1)
 
 HTRGR_BOTH<-rbind(ht.cohort1.1,ht.cohort2.1)
 HTRGR_BOTH[, "season"] <-0
-HTRGR_BOTH[, "year"] <-0
+HTRGR_BOTH[, "calendar_year"] <-0
+HTRGR_BOTH[, "cohort_year"] <-0
 HTRGR_BOTH[, "duration"] <-0
 
 HTRGR_BOTH$interval <- as.character(HTRGR_BOTH$interval)
+
 HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet1' ] <- 'rainy')
 HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet2' ] <- 'rainy')
 HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet3' ] <- 'rainy')
 HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry1' ] <- 'dry')
 HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry2' ] <- 'dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr1' ] <- 'rainy+dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr2' ] <- 'rainy+dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_2yrs' ] <- 'rainy+dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_1yr' ] <- 'rainy+dry')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr1' ] <- '1R1D')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr2' ] <- '2R1D')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yrs1-2' ] <- '3R2D')
+HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_1yr' ] <- '2R1D')
 
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet1' ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_dry1' ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet2' ] <- '2009')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_dry2' ] <- '2009')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_wet3' ] <- '2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet1' ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_dry1' ] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet2' ] <- '2009')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_dry2' ] <- '2009')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet3' ] <- '2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr1'  & cohort == 1] <- '2008')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr2'  & cohort == 1] <- '2009-2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yrs1-2'] <- '2008-2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr1'  & cohort == 2] <- '2009-2010')
 
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr1' & cohort == 1  ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr2' & cohort == 1] <- '2009+2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_1yr' & cohort == 1 ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_yr2' & cohort == 2] <- '2009+2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_2yrs' ] <- '2008-2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, year[interval == 'rgrHT_1yr'] <- '2009+2010')
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet2'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet3'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry1'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry2'] <- "seasonal")
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1' & cohort == 1  ] <- 'annual')
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2' & cohort == 1  ] <- 'annual')
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1' & cohort == 2  ] <- 'annual')
+HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yrs1-2' & cohort == 1] <- 'multiyear')
 
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1'] <- "12 mos") 
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2'] <- "12 mos") 
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_1yr'] <- "12 mos") 
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_2yrs'] <- "24 mos")  
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet1' & cohort == 1  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry1' & cohort == 1  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet2' & cohort == 1  ] <- 'cohort_yr_2')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry2' & cohort == 1  ] <- 'cohort_yr_2')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet3' & cohort == 1  ] <- 'cohort_yr_2')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet2' & cohort == 2  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry2' & cohort == 2  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet3' & cohort == 2  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr1' & cohort == 1  ] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr2' & cohort == 1] <- 'cohort_yr_2')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr1' & cohort == 2] <- 'cohort_yr_1')
+HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
 
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "3 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "3 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet2'] <- "6 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet3'] <- "4 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry1'] <- "7 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry2'] <- "6 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1'] <- "12 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2'] <- "12 mos")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_1yr'] <- "10 mos")
+
+
 
 # COnvert back to factors
 HTRGR_BOTH$interval <- as.factor(HTRGR_BOTH$interval)
 HTRGR_BOTH$season <- as.factor(HTRGR_BOTH$season)
-HTRGR_BOTH$year <- as.factor(HTRGR_BOTH$year)
+HTRGR_BOTH$calendar_year <- as.factor(HTRGR_BOTH$calendar_year)
+HTRGR_BOTH$cohort_year <- as.factor(HTRGR_BOTH$cohort_year)
 HTRGR_BOTH$duration <- as.factor(HTRGR_BOTH$duration)
 summary(HTRGR_BOTH)
 str(HTRGR_BOTH)
@@ -489,14 +511,14 @@ summary(LARGR_BOTH)
 ######################################################
 #Reduce dataset: only include "focal" seedlings.
 str(LARGR_BOTH)
-rgr.test<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "12 mos")
-is.na(rgr.test) <- do.call(cbind,lapply(rgr.test, is.infinite))
+rgr.test<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "seasonal" & cohort =="2")
+is.na(rgr.test) <- do.call(cbind,lapply(rgr.test, is.infinite)) #remove NAs
 rgr.test<-na.omit(rgr.test)
 rgr.test<-droplevels(rgr.test)
 
 
 #SIMPLER AS ANOVA
-aov.la<-aov(rgr.la ~ trt*cohort*year+block, data = rgr.test)
+aov.la<-aov(rgr.la ~ trt*season+block, data = rgr.test)
 summary(aov.la)
 
 
