@@ -47,7 +47,8 @@ library(reshape2)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-
+library("lme4")
+library("nlme")
 
 #################
 ###STEP 1: LOAD THE RAW DATA
@@ -378,9 +379,6 @@ LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr2' & cohort ==
 LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr1' & cohort == 2] <- 'cohort_yr_1')
 LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
 
-
-
-
 # COnvert back to factors
 LARGR_BOTH$interval <- as.factor(LARGR_BOTH$interval)
 LARGR_BOTH$season <- as.factor(LARGR_BOTH$season)
@@ -408,8 +406,6 @@ ht.cohort2<-Exp_Data_C2
 ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
 
 # CALC of RGR 
-
-
 ht.cohort1[, "rgrHT_wet1"] <-(log(ht.cohort1$ht.3)-log(ht.cohort1$ht.1))/84 #t1-t3
 ht.cohort1[, "rgrHT_dry1"] <-(log(ht.cohort1$ht.5)-log(ht.cohort1$ht.3))/(282-84) #t3-t5
 ht.cohort1[, "rgrHT_wet2"] <-(log(ht.cohort1$ht.7)-log(ht.cohort1$ht.5))/(495-282) #t5-t7
@@ -424,7 +420,6 @@ ht.cohort2[, "rgrHT_dry2"] <-(log(ht.cohort2$ht.3)-log(ht.cohort2$ht.1))/(280-91
 ht.cohort2[, "rgrHT_wet3"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.3))/(ht.cohort2$days-280)
 ht.cohort2[, "rgrHT_yr1"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
 
-
 ht.cohort1.1 <- ht.cohort1[ -c(8:16)]
 ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8:15)  
 
@@ -433,7 +428,6 @@ ht.cohort2.1<-gather(ht.cohort2.1, "interval", "rgr.ht", 8:11)
 
 str(ht.cohort1.1)
 str(ht.cohort2.1)
-
 
 HTRGR_BOTH<-rbind(ht.cohort1.1,ht.cohort2.1)
 HTRGR_BOTH[, "season"] <-0
@@ -487,10 +481,7 @@ HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr2' & cohort ==
 HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr1' & cohort == 2] <- 'cohort_yr_1')
 HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
 
-
-
-
-# COnvert back to factors
+# Convert back to factors
 HTRGR_BOTH$interval <- as.factor(HTRGR_BOTH$interval)
 HTRGR_BOTH$season <- as.factor(HTRGR_BOTH$season)
 HTRGR_BOTH$calendar_year <- as.factor(HTRGR_BOTH$calendar_year)
@@ -499,7 +490,6 @@ HTRGR_BOTH$duration <- as.factor(HTRGR_BOTH$duration)
 summary(HTRGR_BOTH)
 str(HTRGR_BOTH)
 
-
 HTRGR_BOTH<-HTRGR_BOTH[with(HTRGR_BOTH, order(block, trt, sdlg.type,seedling.id.no, decreasing = FALSE)), ]
 LARGR_BOTH<-LARGR_BOTH[with(LARGR_BOTH, order(block, trt, sdlg.type,sdlg.id.no, decreasing = FALSE)), ]
 str(HTRGR_BOTH)
@@ -507,368 +497,282 @@ str(HTRGR_BOTH)
 summary(LARGR_BOTH)
 
 ###################################################
-######      ANALYSES - RGR  ###
+######      ANALYSES  
 ######################################################
-#Reduce dataset: only include "focal" seedlings.
-str(LARGR_BOTH)
-rgr.test<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "seasonal" & cohort =="2")
-is.na(rgr.test) <- do.call(cbind,lapply(rgr.test, is.infinite)) #remove NAs
-rgr.test<-na.omit(rgr.test)
-rgr.test<-droplevels(rgr.test)
 
-
-#SIMPLER AS ANOVA
-aov.la<-aov(rgr.la ~ trt*season+block, data = rgr.test)
-summary(aov.la)
-
-
-
-
-
-
-aov.ht<-aov(rgr.ht ~ trt*cohort+block, data = rgr.test)
-summary(aov.ht)
-
-plot(rgr.test$canopy.openess.percent,rgr.test$rgr.ht)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
-ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
-
-ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, block, trt, sdlg.type)), ]
-str(ht.cohort1)
-summary(ht.cohort1)
-
-# COHORT 2
-str(Exp_Data_C2)
-ht.cohort2<-Exp_Data_C2
-
-# DELETE UNECESSARY COLUMNS
-ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
-
-# CALC of RGR 
-ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
-str(ht.cohort2)
-ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, block, trt, sdlg.type)), ]
-str(ht.cohort2)
-
-## LONG FORM THEN JOIN THEM
-# DELETE UNECESSARY COLUMNS
-ht.cohort1.1 <- ht.cohort1[ -c(8:16, 18)]
-ht.cohort1.2 <- ht.cohort1[ -c(8:17)]
-ht.cohort2 <- ht.cohort2[ -c(8:11)]
-#COnvert each to long 
-
-ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8)  
-ht.cohort1.2<-gather(ht.cohort1.2, "interval", "rgr.ht", 8)  
-ht.cohort2<-gather(ht.cohort2, "interval", "rgr.ht", 8)  
-
-#chnage the values of the cells
-ht.cohort1.1$interval <-as.character(ht.cohort1.1$interval) #need these because they are factors, covert to chars
-ht.cohort1.1$interval <- replace(ht.cohort1.1$interval, ht.cohort1.1$interval=="rgr.ht.1.4", "12 mos")
-
-#chnage the values of the cells
-ht.cohort1.2$interval <-as.character(ht.cohort1.2$interval) #need these because they are factors, covert to chars
-ht.cohort1.2$interval <- replace(ht.cohort1.2$interval, ht.cohort1.2$interval=="rgr.ht.1.9", "24 mos")
-
-
-#chnage the values of the cells
-ht.cohort2$interval <-as.character(ht.cohort2$interval) #need these because they are factors, covert to chars
-ht.cohort2$interval <- replace(ht.cohort2$interval, ht.cohort2$interval=="rgr.ht.1.4", "12 mos")
-str(ht.cohort1.1)
-str(ht.cohort1.2)
-str(ht.cohort2)
-all.height.rgr<-rbind(ht.cohort1.2,ht.cohort1.1,ht.cohort2)
-
-
-dim(all.height.rgr)
-dim(foo7)
-str(foo7)
-
-all.rgr<-cbind(foo7,all.height.rgr)
-all.rgr <- all.rgr[ -c(11:18)]
-
-plot(all.rgr$rgr.ht,all.rgr$rgr.la)
-plot(all.rgr$rgr.ht,all.rgr$rgr.la)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-####### PUTTING BOTH COHORTS TOGETHER - LA #######
-# Cohort 1
-LFAREA_1_LA<-COHORT1.wide
-LFAREA_1_LA <- LFAREA1[ -c(16:23)]
-LFAREA_1_LA<-gather(LFAREA_1_LA, "interval", "rgr.la", 7:15)  
-
-# Cohort 2
-LFAREA_2_LA<-COHORT2.wide
-LFAREA_2_LA <- LFAREA2[ -c(11:14)]
-LFAREA_2_LA<-gather(LFAREA_2_LA, "interval", "rgr.la", 7:10)  
-# str(LFAREA_1_LA)
-# str(LFAREA_2_LA)
-
-#Bind the 2
-LA_BOTH<-rbind(LFAREA_1_LA,LFAREA_2_LA)
-
-
-
-
-
-
-
-
-# DELETE UNECESSARY COLUMNS
-LFAREA1.1 <- LFAREA1[ -c(7:15, 18:19)]
-# LFAREA1.2 <- LFAREA1[ -c(7:17)]
-# str(LFAREA1.1)
-
-#COnvert each to long 
-foo<-gather(LFAREA1.1, "interval", "rgr.la", 7:8)  
-foo2<-gather(LFAREA1.2, "interval", "perc.chng.la", 7:8)
-foo3<-cbind(foo,foo2)
-foo3<- foo3[ -c(9:15)]
-#chnage the values of the cells
-foo3$interval <-as.character(foo3$interval) #need these because they are factors, covert to chars
-foo3$interval <- replace(foo3$interval, foo3$interval=="rgr1.9", "24 mos")
-foo3$interval <- replace(foo3$interval, foo3$interval=="rgr1.4", "12 mos")
-#delete interval 2
-str(foo3)
+# Are final height and length correlated?
+COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
+ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt)), ]
+sdlg_size_end<-as.data.frame(COHORT1.wide$LAt9)
+sdlg_size_end<-cbind(sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort))
+names(sdlg_size_end)[1] <- "LA_final"
+names(sdlg_size_end)[2] <- "HT_final"
+names(sdlg_size_end)[3] <- "trt"
+names(sdlg_size_end)[4] <- "block"
+names(sdlg_size_end)[5] <- "cohort"
+na.omit(sdlg_size_end)
+plot(sdlg_size_end)
+hist(sdlg_size_end$LA_final)
+hist(sdlg_size_end$HT_final)
+str(sdlg_size_end)
+summary(sdlg_size_end)
+cor(sdlg_size_end[1:2], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
+# HTvLA<-lm(sdlg_size_end$LA_final ~ sdlg_size_end$HT_final)
+# summary(HTvLA)
+
+ggplot(sdlg_size_end, aes(x=HT_final, y=LA_final, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+
+hist(sdlg_size_end$LA_final)
+hist(sdlg_size_end$HT_final)
+
+GLM_HT_LA1<-glm(LA_final ~ 1, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA2<-glm(LA_final ~ HT_final, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_end, family = gaussian)
+
+anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
+
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6) #adding block doesn't result in lower AIC
+
+# Anova version (can't use, unbalanced design)
+# LAreg <- lm(LA_final ~ HT_final*trt, data =sdlg_size_end )
+# anova(LAreg)
+# summary(LAreg)
 
 # 
-# Cohort 2
-LFAREA2<-COHORT2.wide
+# COHORT 2 (can combine later)
+COHORT2.wide<-COHORT2.wide[with(COHORT2.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
+ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, sdlg.type, block, trt)), ]
+sdlg_size_C2end<-as.data.frame(COHORT2.wide$LAt4)
+sdlg_size_C2end<-cbind(sdlg_size_C2end,as.data.frame(ht.cohort2$ht.4), as.data.frame(ht.cohort2$trt), as.data.frame(ht.cohort2$block),as.data.frame(ht.cohort2$cohort))
+names(sdlg_size_C2end)[1] <- "LA_final"
+names(sdlg_size_C2end)[2] <- "HT_final"
+names(sdlg_size_C2end)[3] <- "trt"
+names(sdlg_size_C2end)[4] <- "block"
+names(sdlg_size_C2end)[5] <- "cohort"
+na.omit(sdlg_size_C2end)
+plot(sdlg_size_C2end)
+hist(sdlg_size_C2end$LA_final)
+hist(sdlg_size_C2end$HT_final)
+str(sdlg_size_C2end)
+summary(sdlg_size_C2end)
+cor(sdlg_size_end[1:2], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
 
-# DELETE UNECESSARY COLUMNS
-LFAREA2.1 <- LFAREA2[ -c(7:10,12)]
-LFAREA2.2 <- LFAREA2[ -c(7:11)]
-str(LFAREA2.1)
-str(LFAREA2.2)
+ggplot(sdlg_size_C2end, aes(x=HT_final, y=LA_final, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
 
-#COnvert each to long 
-foo4<-gather(LFAREA2.1, "interval", "rgr.la", 7)  
-foo5<-gather(LFAREA2.2, "interval", "perc.chng.la", 7)
-foo6<-cbind(foo4,foo5)
-foo6<- foo6[ -c(9:15)]
-#chnage the values of the cells
-foo6$interval <-as.character(foo6$interval) #need these because they are factors, covert to chars
-foo6$interval <- replace(foo6$interval, foo6$interval=="rgr1.4", "12 mos")
-#delete interval 2
-str(foo3)
-str(foo6)
-foo7<-rbind(foo3,foo6)
-#add canopy
-foo7<-left_join(foo7,canopy[1:2], by = "block")
-foo7$cohort<-as.factor(foo7$cohort)
-#Reduce dataset: only include "focal" seedlings.
+hist(sdlg_size_C2end$LA_final)
+hist(sdlg_size_C2end$HT_final)
 
+GLM_HT_LA1<-glm(LA_final ~ 1, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA2<-glm(LA_final ~ HT_final, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_C2end, family = gaussian)
 
-Focal<-filter(foo7, sdlg.type == "focal")
-Focal<-droplevels(Focal)
-Focal<-filter(Focal, interval == "12 mos")
-Focal<-droplevels(Focal)
-aov1<-aov(rgr.la ~ trt+cohort+block, data = Focal)
-hist(foo7$rgr.la)
-# hist(foo7$perc.chng.la)
-summary(aov1)
-bmass1Fig <- ggplot(Focal, aes(x=cohort, y=rgr.la)) + 
-  geom_boxplot()
-bmass1Fig
+anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
+anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
 
-bmass1Fig <- ggplot(Focal, aes(x=cohort, y=perc.chng.la)) + 
-  geom_boxplot()
-bmass1Fig
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6) #for cohort 2 best model fit is just ht
 
-
-
-#################
-###CALCLULATIONS OF RGR BAsed on seedling height
-##################
-#rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
-
-# COHORT 1
-str(Exp_Data_C1)
-ht.cohort1<-Exp_Data_C1
-
-# DELETE UNECESSARY COLUMNS
-ht.cohort1 <- ht.cohort1[ -c(7:158,169:181)]
-str(ht.cohort1)
-
-# CALC of RGR 
-ht.cohort1[, "rgr.ht.1.4"] <-(log(ht.cohort1$ht.4)-log(ht.cohort1$ht.1))/ht.cohort1$days
-ht.cohort1[, "rgr.ht.1.9"] <-(log(ht.cohort1$ht.9)-log(ht.cohort1$ht.1))/ht.cohort1$days
-
-ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, block, trt, sdlg.type)), ]
-str(ht.cohort1)
-summary(ht.cohort1)
-
-# COHORT 2
-str(Exp_Data_C2)
-ht.cohort2<-Exp_Data_C2
-
-# DELETE UNECESSARY COLUMNS
-ht.cohort2 <- ht.cohort2[ -c(7:62,68:73)]
-
-# CALC of RGR 
-ht.cohort2[, "rgr.ht.1.4"] <-(log(ht.cohort2$ht.4)-log(ht.cohort2$ht.1))/ht.cohort2$days
-str(ht.cohort2)
-ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, block, trt, sdlg.type)), ]
-str(ht.cohort2)
-
-## LONG FORM THEN JOIN THEM
-# DELETE UNECESSARY COLUMNS
-ht.cohort1.1 <- ht.cohort1[ -c(8:16, 18)]
-ht.cohort1.2 <- ht.cohort1[ -c(8:17)]
-ht.cohort2 <- ht.cohort2[ -c(8:11)]
-#COnvert each to long 
-
-ht.cohort1.1<-gather(ht.cohort1.1, "interval", "rgr.ht", 8)  
-ht.cohort1.2<-gather(ht.cohort1.2, "interval", "rgr.ht", 8)  
-ht.cohort2<-gather(ht.cohort2, "interval", "rgr.ht", 8)  
-
-#chnage the values of the cells
-ht.cohort1.1$interval <-as.character(ht.cohort1.1$interval) #need these because they are factors, covert to chars
-ht.cohort1.1$interval <- replace(ht.cohort1.1$interval, ht.cohort1.1$interval=="rgr.ht.1.4", "12 mos")
-
-#chnage the values of the cells
-ht.cohort1.2$interval <-as.character(ht.cohort1.2$interval) #need these because they are factors, covert to chars
-ht.cohort1.2$interval <- replace(ht.cohort1.2$interval, ht.cohort1.2$interval=="rgr.ht.1.9", "24 mos")
+BOTH<-rbind(sdlg_size_end, sdlg_size_C2end)
+summary(BOTH)
+BOTH$cohort<-as.factor(BOTH$cohort)
+BOTH$trt<-as.factor(BOTH$trt)
+BOTH$block<-as.factor(BOTH$block)
 
 
-#chnage the values of the cells
-ht.cohort2$interval <-as.character(ht.cohort2$interval) #need these because they are factors, covert to chars
-ht.cohort2$interval <- replace(ht.cohort2$interval, ht.cohort2$interval=="rgr.ht.1.4", "12 mos")
-str(ht.cohort1.1)
-str(ht.cohort1.2)
-str(ht.cohort2)
-all.height.rgr<-rbind(ht.cohort1.2,ht.cohort1.1,ht.cohort2)
+GLM_HT_LA1<-glm(LA_final ~ 1, data = BOTH, family = gaussian)
+GLM_HT_LA2<-glm(LA_final ~ HT_final, data = BOTH, family = gaussian)
+GLM_HT_LA3<-glm(LA_final ~ trt, data = BOTH, family = gaussian)
+GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = BOTH, family = gaussian)
+GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = BOTH, family = gaussian)
+GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = BOTH, family = gaussian)
+GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+cohort, data = BOTH, family = gaussian)
 
+anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
+anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
 
-dim(all.height.rgr)
-dim(foo7)
-str(foo7)
-
-all.rgr<-cbind(foo7,all.height.rgr)
-all.rgr <- all.rgr[ -c(11:18)]
-
-plot(all.rgr$rgr.ht,all.rgr$rgr.la)
-plot(all.rgr$rgr.ht,all.rgr$rgr.la)
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #for cohort 2 best model fit is just ht
 
 
 
+#########################################
+# Analysis of LA - Experimental Seedlings
+#########################################
+
+# #choose seedlings focal + competitors
+# add & sdlg.type == "focal" if you only want focal seedlings
+
+rgr.test.C2<-filter(LARGR_BOTH,  duration == "annual" & cohort =="2") #cohort 2 after 1 year
+
+rgr.test.C1<-filter(LARGR_BOTH,  duration == "multiyear" & cohort =="1") # cohort 1 after 2 years
+rgr.test.C1.1<-filter(LARGR_BOTH,  cohort_year == "cohort_yr_1" & duration == "annual" & cohort =="1") # cohort 1 after 1 years
+rgr.test.C1.2<-filter(LARGR_BOTH,  cohort_year == "cohort_yr_2" & duration == "annual" & cohort =="1") # cohort 1 YEAR 2 ONLY
+
+rgr.testLA<-rbind(rgr.test.C2,rgr.test.C1.1) #cohort 1 and coghort 2 after 1 year
+
+rgr.test.C1$cohort<-as.factor(rgr.test.C1$cohort)
+rgr.test.C1$block<-as.factor(rgr.test.C1$block)
+is.na(rgr.test.C1) <- do.call(cbind,lapply(rgr.test.C1, is.infinite)) #remove NAs
+rgr.test.C1<-na.omit(rgr.test.C1)
+rgr.test.C1<-droplevels(rgr.test.C1)
+
+rgr.test.C2$cohort<-as.factor(rgr.test.C2$cohort)
+rgr.test.C2$block<-as.factor(rgr.test.C2$block)
+is.na(rgr.test.C2) <- do.call(cbind,lapply(rgr.test.C2, is.infinite)) #remove NAs
+rgr.test.C2<-na.omit(rgr.test.C2)
+rgr.test.C2<-droplevels(rgr.test.C2)
+
+rgr.testLA$cohort<-as.factor(rgr.testLA$cohort)
+rgr.testLA$block<-as.factor(rgr.testLA$block)
+is.na(rgr.testLA) <- do.call(cbind,lapply(rgr.testLA, is.infinite)) #remove NAs
+rgr.testLA<-na.omit(rgr.testLA)
+rgr.testLA<-droplevels(rgr.testLA)
+rgr.testLA<-& sdlg.type == "focal"
+
+# http://conjugateprior.org/2013/01/formulae-in-r-anova/
+# aov formula when A is random factor, B is fixed, and B is nested within A.
+# A=block B=trt
+# aov(Y ~ B + Error(A/B), data=d)
+
+# foo<-lm(rgr.la ~ trt + block/trt, data=rgr.test.C1)
+# anova(foo)
+# summary(foo)
+
+# using lme4
+# lmer(Y ~ B + (1 | A), data=d)
+# lmer(Y ~ 1 + B + (1 | A), data=d)
+# lmer(rgr.la ~ trt + (1 | block), data=rgr.test.C1)
+# # lmer(rgr.la ~ 1 + trt + (1 | block), data=rgr.test.C1)
+# If A is random, B is fixed, and B is nested within A then
+# lmer(Y ~ B + (1 | A:B), data=d)
+# lmer(rgr.la ~ trt + (1 | block:trt), data=rgr.test.C1)
+
+
+# Anovas
+# Cohort 1 YEAR AFTER 2
+C1<-lm(rgr.la ~ trt + block/trt, data=rgr.test.C1) 
+anova(C1)
+summary(C1)
+with(rgr.test.C1, interaction.plot(trt, block, rgr.la),ylab = "RGR (leaf area)", xlab = "treatment", trace.label = "block")
+boxplot(rgr.la~trt,data=rgr.test.C1) 
+boxplot(rgr.la~block,data=rgr.test.C1) 
+# Cohort 1 YER 1
+# C1.1<-lm(rgr.la ~ trt + block/trt, data=rgr.test.C1) 
+# anova(C1.1)
+# summary(C1.1)
+# with(rgr.test.C1.1, interaction.plot(trt, block, rgr.la),ylab = "RGR (leaf area)", xlab = "treatment", trace.label = "block")
+# boxplot(rgr.la~trt,data=rgr.test.C1.1) 
+# boxplot(rgr.la~block,data=rgr.test.C1.1) 
+# 
+# # Cohort 1 YER 2
+# C1.2<-lm(rgr.la ~ trt + block/trt, data=rgr.test.C1) 
+# anova(C1.2)
+# summary(C1.2)
+# with(rgr.test.C1.2, interaction.plot(trt, block, rgr.la),ylab = "RGR (leaf area)", xlab = "treatment", trace.label = "block")
+# boxplot(rgr.la~trt,data=rgr.test.C1.2) 
+# boxplot(rgr.la~block,data=rgr.test.C1.2) 
 
 
 
-###################################################
-######      ANALYSES - RGR  ###
-######################################################
-#Reduce dataset: only include "focal" seedlings.
-rgr.test<-filter(all.rgr, sdlg.type == "focal")
-rgr.test<-droplevels(rgr.test)
-
-
-#SIMPLER AS ANOVA
-aov.la<-aov(rgr.la ~ trt*cohort+block, data = rgr.test)
-summary(aov.la)
-
-aov.ht<-aov(rgr.ht ~ trt*cohort+block, data = rgr.test)
-summary(aov.ht)
-
-plot(rgr.test$canopy.openess.percent,rgr.test$rgr.ht)
+# cohort2 all
+C2<-lm(rgr.la ~ trt + block/trt, data=rgr.test.C2)
+anova(C2)
+summary(C2)
+with(rgr.test.C2, interaction.plot(trt, block, rgr.la),ylab = "RGR (leaf area)", xlab = "treatment", trace.label = "block")
+# means.barplot <- qplot(x=trt, y=rgr.la, fill=trt,
+#                        data=rgr.test.C2, geom="bar", stat="identity",
+#                        position="dodge")
+rgr.test.C2 %>% group_by(trt) %>% summarize(avg=mean(rgr.la))
+rgr.test.C2 %>% group_by(trt) %>% summarize(sd=sd(rgr.la))
+boxplot(rgr.la~trt,data=rgr.test.C2) 
+boxplot(rgr.la~block,data=rgr.test.C2) 
+# both - all at the end of the 1sy year
+# Cboth<-lm(rgr.la ~ trt*cohort + block/trt/cohort, data=rgr.testLA)
+# anova(Cboth)
+# summary(Cboth)
+# with(rgr.test.C1, interaction.plot(trt, block, rgr.la),ylab = "RGR (leaf area)", xlab = "treatment", trace.label = "block")
+# boxplot(rgr.la~trt,data=rgr.testLA) 
+# boxplot(rgr.la~block,data=rgr.testLA) 
+# boxplot(rgr.la~cohort,data=rgr.testLA) 
 
 # GLM LA
-
-glm.1<-glm(rgr.la ~ block, family = gaussian, data = rgr.test)
+glm.0<-glm(rgr.la ~ 1, family = gaussian, data = rgr.testLA)
+summary(glm.0)
+glm.1<-glm(rgr.la ~ block, family = gaussian, data = rgr.testLA)
 summary(glm.1)
-glm.2<-glm(rgr.la ~ trt+block, family = gaussian, data = rgr.test)
+glm.2<-glm(rgr.la ~ cohort, family = gaussian, data = rgr.testLA)
 summary(glm.2)
-glm.3<-glm(rgr.la ~ cohort+block, family = gaussian, data = rgr.test)
+glm.3<-glm(rgr.la ~ trt, family = gaussian, data = rgr.testLA)
 summary(glm.3)
-glm.4<-glm(rgr.la ~ trt+cohort+block, family = gaussian, data = rgr.test)
+glm.4<-glm(rgr.la ~ trt+block, family = gaussian, data = rgr.testLA)
 summary(glm.4)
+glm.5<-glm(rgr.la ~ trt+cohort, family = gaussian, data = rgr.testLA)
+summary(glm.5)
+glm.6<-glm(rgr.la ~ cohort+block, family = gaussian, data = rgr.testLA)
+summary(glm.6)
+glm.7<-glm(rgr.la ~ trt*cohort+block, family = gaussian, data = rgr.testLA)
+summary(glm.7)
 
-anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
-anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
-anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
-anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
+anova(glm.0,glm.1, test = "Chisq")  #no imp fit by adding block over just intercept
+anova(glm.0,glm.2, test = "Chisq")  #imp fit by adding cohort over just intercept
+anova(glm.0,glm.3, test = "Chisq")  #no imp fit by adding trt over just intercept
+anova(glm.3,glm.4, test = "Chisq")  #adding block to trt sig improves fit
 
-AIC(glm.1, glm.2, glm.3,glm.4)
+AIC(glm.0,glm.1, glm.2, glm.3,glm.4, glm.5, glm.6, glm.7)
 
-# GLM - Height
 
-glm.1<-glm(rgr.ht ~ block, family = gaussian, data = rgr.test)
-summary(glm.1)
-glm.2<-glm(rgr.ht ~ trt+block, family = gaussian, data = rgr.test)
-summary(glm.2)
-glm.3<-glm(rgr.ht ~ cohort+block, family = gaussian, data = rgr.test)
-summary(glm.3)
-glm.4<-glm(rgr.ht ~ trt+cohort+block, family = gaussian, data = rgr.test)
-summary(glm.4)
+#SIMPLER AS ANOVA - LA (all seedlings, nested
+aov.la<-aov(rgr.la ~ trt*cohort+trt/sdlg.id.no, data = rgr.testLA)
+summary(aov.la)
 
-anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
-anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
-anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
-anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
+boxplot(rgr.la~trt*cohort,data=rgr.testLA) 
 
-AIC(glm.1, glm.2, glm.3,glm.4)
+
+#########################################
+# Analysis of HT - Experimental Seedlings
+#########################################
+
+#Reduce dataset: only include "focal" seedlings.
+# str(LARGR_BOTH)
+
+###THIS ANALYSIS IS OF RGR from start of experiment to end - no seasonal effects
+rgr.test.C2<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "annual" & cohort =="2")
+rgr.test.C1<-filter(LARGR_BOTH, sdlg.type == "focal" & duration == "multiyear" & cohort =="1")
+rgr.testLA<-rbind(rgr.test.C2,rgr.test.C1)
+
+rgrHTC2.test<-filter(HTRGR_BOTH, sdlg.type == "focal" & duration == "annual" & cohort =="2")
+rgrHTC1.test<-filter(HTRGR_BOTH, sdlg.type == "focal" & duration == "multiyear" & cohort =="1")
+rgrHT.test<-rbind(rgrHTC2,rgrHTC1)
+
+rgrHT.test$cohort<-as.factor(rgrHT.test$cohort)
+rgrHT.test$block<-as.factor(rgrHT.test$block)
+is.na(rgrHT.test) <- do.call(cbind,lapply(rgrHT.test, is.infinite)) #remove NAs
+rgrHT.test<-na.omit(rgrHT.test)
+rgrHT.test<-droplevels(rgrHT.test)
+
+#SIMPLER AS ANOVA - LA 
+aov.ht<-aov(rgr.ht ~ trt*cohort+block, data = rgrHT.test)
+summary(aov.ht)
+with(rgrHT.test, interaction.plot(trt, cohort, rgr.ht),ylab = "RGR (height)", xlab = "treatment", trace.label = "Cohort")
 
 
 ###################################################
@@ -886,42 +790,40 @@ bmass$LAI.4.ring<-NULL
 bmass$LAI.5.ring<-NULL
 str(bmass)
 
-glm.1<-glm(Total.bmass ~ block, family = identity, data = bmass)
-summary(glm.1)
-glm.2<-glm(Total.bmass ~ trt+block, family = log, data = bmass)
-summary(glm.2)
-glm.3<-glm(Total.bmass ~ cohort+block, family = log, data = bmass)
-summary(glm.3)
-glm.4<-glm(Total.bmass ~ trt+cohort+block, family = log, data = bmass)
-summary(glm.4)
-
-anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding trt over just block
-anova(glm.1,glm.3, test = "Chisq")  #sig improve fit when adding cohort
-anova(glm.3,glm.4, test = "Chisq")  #adding trt means nothing
-# anova(glm.3,glm.2, test = "Chisq")  ##this just emphasizes the importance of cohort, not trt
-
-AIC(glm.1, glm.2, glm.3,glm.4)
-
 #SIMPLER AS ANOVA
-aov.bm<-aov(RSratio ~ trt*cohort+block, data = bmass)
+#with focal only
+aov.bm<-aov(RSratio ~ trt+cohort+block/trt/cohort, data = bmass)
 summary(aov.bm)
 
-
-
-
-
-
-
-
-
-
-
-
+#with all
 
 
 # logit trasnform, but actually don't do this...
 # bmass<-bmass[, "logitRS"] <-log10(bmass$RSratio+/(1-bmass$RSratio))
 
+
+
+
+
+
+
+
+
+#Figures RGR
+
+ggplot(rgr.testLA, aes(x=trt, y=rgr.la)) + geom_boxplot() 
+
+ggplot(data=rgr.testLA, aes(x=trt, y=rgr.la, group=sdlg.id.no)) +
+  geom_line()+
+  geom_point()
+
+p<-ggplot(rgr.testLA, aes(x=trt, y=rgr.la, group=cohort)) +
+  geom_line(aes(color=cohort))+
+  geom_point(aes(color=cohort))
+p
+
+
+plot(rgr.testLA$canopy.openess.percent,rgr.test$rgr.ht)
 
 
 # SPlit the cohorts 
@@ -939,7 +841,6 @@ hist(bmass.2$RSratio)
 aov.bmass.2<-aov(RSratio ~ trt+block, data = bmass.2)
 summary(aov.bmass.2)
 
-
 # Graph 
 bmass1Fig <- ggplot(bmass.1, aes(x=trt, y=RSratio)) + 
   geom_boxplot()
@@ -950,7 +851,6 @@ bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) +
 bmass2Fig
 
 # BOX PLOTS
-boxplot(rgr.ht.1.4~trt,data=ht.cohort2) #Cohort 2 1.4
 boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
 
 
@@ -971,136 +871,6 @@ boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
 
 
 
-
-
-
-
-###################################################
-###
-###      ANALYSES - RGR Based on LEAF AREA     ###
-###
-###################################################
-
-# COHORT ONE
-#Reduce dataset: only include "focal" seedlings.
-Focal.One<-filter(COHORT1.wide, sdlg.type == "focal")
-Focal.One<-droplevels(Focal.One)
-Focal.One<-full_join(Focal.One, canopy, by = "block")
-summary(Focal.One)
-
-glm.1<-glm(rgr1.9 ~ block, family = gaussian, data = Focal.One)
-summary(glm.1)
-glm.2<-glm(rgr1.9 ~ trt+block, family = gaussian, data = Focal.One)
-summary(glm.2)
-anova(glm.1,glm.2, test = "Chisq")
-AIC(glm.1, glm.2)
-
-#SIMPLER AS ANOVA
-aov1<-aov(rgr1.9 ~ trt+block, data = Focal.One)
-summary(aov1)
-plot(Focal.One$canopy.openess.percent, Focal.One$rgr1.9)
-
-# repeated measures ANOVA with growth after 1 year, then after 2 years.
-#
-#
-#
-# NEED TO CODE THE RM ANOVA
-#
-#
-#
-
-
-
-
-# COHORT TWO
-#Reduce dataset: only include "focal" seedlings.
-Focal.Two<-filter(COHORT2.wide, sdlg.type == "focal")
-Focal.Two<-droplevels(Focal.Two)
-Focal.Two<-full_join(Focal.Two, canopy, by = "block")
-summary(Focal.Two)
-
-glm.3<-glm(rgr1.4 ~ block, family = gaussian, data = Focal.Two)
-summary(glm.3)
-glm.4<-glm(rgr1.4 ~ trt+block, family = gaussian, data = Focal.Two)
-summary(glm.4)
-anova(glm.3,glm.4, test = "Chisq")
-AIC(glm.3, glm.4)
-
-#SIMPLER AS ANOVA
-aov2<-aov(rgr1.4 ~ trt+block, data = Focal.Two)
-summary(aov2)
-
-#####################
-# BIOMASS
-
-bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
-bmass<-full_join(bmass, canopy, by = "block")
-bmass<-select(bmass, block:canopy.openess.percent)
-
-# logit trasnform, but actually don't do this...
-# bmass<-bmass[, "logitRS"] <-log10(bmass$RSratio+/(1-bmass$RSratio))
-
-# SPlit the cohorts 
-bmass.1<-filter(bmass, cohort == "1")
-bmass.1<-droplevels(bmass.1)
-str(bmass.1)
-hist(bmass.1$RSratio)
-aov.bmass.1<-aov(RSratio ~ trt+block, data = bmass.1)
-summary(aov.bmass.1)
-
-
-bmass.2<-filter(bmass, cohort == "2")
-bmass.2<-droplevels(bmass.2)
-hist(bmass.2$RSratio)
-aov.bmass.2<-aov(RSratio ~ trt+block, data = bmass.2)
-summary(aov.bmass.2)
-
-
-# Graph 
-bmass1Fig <- ggplot(bmass.1, aes(x=trt, y=RSratio)) + 
-  geom_boxplot()
-bmass1Fig
-
-bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) + 
-  geom_boxplot()
-bmass2Fig
-
-
-# BOX PLOTS
-boxplot(rgr.ht.1.4~trt,data=ht.cohort2) #Cohort 2 1.4
-boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
-
-
-# ANOVA
-ht.cohort2.focal<-filter(ht.cohort2, sdlg.type == "focal")
-ht.cohort2.focal<-droplevels(ht.cohort2.focal)
-
-boxplot(ht.4~trt,data=ht.cohort2.focal) #Cohort 1 ht focal final after 4
-
-aov.C2.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort2.focal)
-summary(aov.C2.14)
-
-# BOX PLOTS
-boxplot(rgr.ht.1.4~block,data=ht.cohort1) #Cohort 1 1.4
-boxplot(rgr.ht.1.9~block,data=ht.cohort1) #Cohort 1 1.9
-boxplot(ht.4~trt,data=ht.cohort1) #Cohort 1 ht final after 4
-boxplot(ht.9~trt,data=ht.cohort1) #Cohort 1 ht final after 9
-
-# ANOVA
-# First reduce to only "focal' seedlings
-ht.cohort1.focal<-filter(ht.cohort1, sdlg.type == "focal")
-ht.cohort1.focal<-droplevels(ht.cohort1.focal)
-
-
-boxplot(ht.4~trt,data=ht.cohort1.focal) #Cohort 1 focal ht final after 4
-boxplot(ht.9~trt,data=ht.cohort1.focal) #Cohort 1 ht focal final after 9
-
-
-aov.C1.14<-aov(rgr.ht.1.4 ~ trt+block, data = ht.cohort1.focal)
-summary(aov.C1.14)
-
-aov.C1.19<-aov(rgr.ht.1.9 ~ trt+block, data = ht.cohort1.focal)
-summary(aov.C1.19)
 
 
 
