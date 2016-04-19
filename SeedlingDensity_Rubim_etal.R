@@ -497,7 +497,7 @@ str(HTRGR_BOTH)
 summary(LARGR_BOTH)
 
 ###################################################
-######      ANALYSES  
+######      ANALYSES  --- GROWTH
 ######################################################
 
 # Are final height and length correlated?
@@ -589,6 +589,11 @@ anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction
 
 AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6) #for cohort 2 best model fit is just ht
 
+
+###NEED TO COMPARE a) end of year 1 for cohorts b) cohort 1 year 1 vs. 3
+
+
+# Both Together 
 BOTH<-rbind(sdlg_size_end, sdlg_size_C2end)
 summary(BOTH)
 BOTH$cohort<-as.factor(BOTH$cohort)
@@ -602,15 +607,275 @@ GLM_HT_LA3<-glm(LA_final ~ trt, data = BOTH, family = gaussian)
 GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = BOTH, family = gaussian)
 GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = BOTH, family = gaussian)
 GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = BOTH, family = gaussian)
-GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+cohort, data = BOTH, family = gaussian)
+GLM_HT_LA7<-glm(LA_final ~ HT_final*trt*cohort, data = BOTH, family = gaussian)
+GLM_HT_LA8<-glm(LA_final ~ HT_final*trt*cohort+block, data = BOTH, family = gaussian)
+
+model.names <- c("1 Intercept", "2 Height", "3 Treatment", "4 Height + Treatment", "5 Height*Treatment", "6 Height*Treatment+Block", "7 Height*Treatment*Cohort", "8 Height*Treatment*Cohort+Block")
+
+aov(GLM_HT_LA7)
+summary(GLM_HT_LA7)
 
 anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
 anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
 anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
 anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
 anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt*ht*cohort improvies
+anova(GLM_HT_LA7,GLM_HT_LA8, test = "Chisq")  #adding block to 7 doesn't!
 
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #for cohort 2 best model fit is just ht
+
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8) #for cohort 2 best model fit is just ht
+
+# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
+
+# THE JAMIE WAY
+summ.table <- do.call(rbind, lapply(list(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+
+# THE BOLKER WAY 
+reported.table2 <- bbmle::AICtab(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8, weights = TRUE, sort = FALSE, mnames = model.names)
+reported.table2[["Resid. Dev"]]  <- summ.table[["deviance"]] # get the deviance from broom'd table
+reported.table2
+
+
+
+
+
+###################################################
+######      ANALYSES - BMASS  ###
+######################################################
+
+bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
+bmass[, "Total.bmass"] <-bmass$root.biomass+bmass$lf.biomass+bmass$stem.biomass
+bmass<-full_join(bmass, canopy, by = "block")
+bmass$location<-NULL
+bmass$site.openess.percent<-NULL
+bmass$mask.openess.percent<-NULL
+bmass$sky.area.percent<-NULL
+bmass$LAI.4.ring<-NULL 
+bmass$LAI.5.ring<-NULL
+str(bmass)
+
+bmassC1<-filter(bmass,  cohort == "1") #cohort 1 after 2 years
+bmassC1$cohort<-as.factor(bmassC1$cohort)
+
+bmassC2<-filter(bmass,  cohort == "2") #cohort 2 after 1 year
+bmassC2$cohort<-as.factor(bmassC2$cohort)
+
+# VISUALIZATIONS
+
+
+
+# HISTOGRAMS
+# COHORT 1
+hist(bmassC1$RSratio)
+hist(bmassC1$Total.bmass)
+# COHORT 2
+hist(bmassC2$RSratio)
+hist(bmassC2$Total.bmass)
+
+
+# BOX PLOTS
+# COHORT 1
+boxplot(RSratio~trt,data=bmassC1) #Cohort 1 RS final
+boxplot(Total.bmass~trt,data=bmassC1) #Cohort 1 Bmass final
+# COHORT 2
+boxplot(RSratio~trt,data=bmassC2) #Cohort 2 RS final 
+boxplot(Total.bmass~trt,data=bmassC2) #Cohort bmass final
+
+# PLOTS OF RS Ratio (Y) vs Total Biomass (X) BY TREATMENT
+# COHORT 1
+
+ggplot(bmassC1, aes(x=Total.bmass, y=RSratio, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+# COHORT 2
+aov.bmC2<-aov(RSratio ~ trt+Total.bmass+block/trt, data = bmassC2)
+summary(aov.bmC2)
+ggplot(bmassC2, aes(x=Total.bmass, y=RSratio, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+
+
+##########
+# ANALYSES (note: with focal only)
+##########
+
+##########
+# COHORT 1
+##########
+
+# as ANCOVA (note there is an interaciton between trt and covariate, meaning final biomass could be influenced by density)
+aov.bmC1<-aov(RSratio ~ trt * Total.bmass+Error(block:trt), data = bmassC1)
+summary(aov.bmC1)
+
+
+
+glm.1<-glm(RSratio ~ 1, family = gaussian, data = bmassC2)
+summary(glm.1)
+glm.2<-glm(RSratio ~ block, family = gaussian, data = bmassC2)
+summary(glm.2)
+glm.3<-glm(RSratio ~ trt, family = gaussian, data = bmassC2)
+summary(glm.3)
+glm.4<-glm(RSratio ~ Total.bmass, family = gaussian, data = bmassC2)
+summary(glm.4)
+glm.5<-glm(RSratio ~ trt+block, family = gaussian, data = bmassC2)
+summary(glm.5)
+glm.6<-glm(RSratio ~ trt+Total.bmass, family = gaussian, data = bmassC2)
+summary(glm.6)
+glm.7<-glm(RSratio ~ trt*Total.bmass+block, family = gaussian, data = bmassC2)
+summary(glm.7)
+# 
+anova(glm.1,glm.2, test = "Chisq")  #no imp fit by adding block over just intercept
+anova(glm.1,glm.3, test = "Chisq")  #imp fit by adding trt over just intercept
+anova(glm.1,glm.4, test = "Chisq")  #no imp fit by adding total bmass over just intercept (though lose...0.06)
+anova(glm.1,glm.5, test = "Chisq")  #no imp fit by adding total trt+block over just intercept
+anova(glm.1,glm.6, test = "Chisq")  #no imp fit by adding trt+total bmass over just intercept (though lose...0.06)
+anova(glm.1,glm.7, test = "Chisq")  #no imp fit by adding trt+total bmass + block over just intercept (though lose...0.06)
+
+AIC(glm.1, glm.2, glm.3,glm.4, glm.5, glm.6, glm.7)
+
+# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
+
+# THE JAMIE WAY
+summ.table <- do.call(rbind, lapply(list(glm.1, glm.2, glm.3,glm.4, glm.5, glm.6, glm.7), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+#row.names(reported.table) <- model.names
+reported.table
+
+##########
+# COHORT 2
+##########
+
+
+# as ANCOVA (note there is an interaciton between trt and covariate, meaning final biomass could be influenced by density)
+aov.bmC2<-aov(RSratio ~ trt * Total.bmass+Error(block:trt), data = bmassC2)
+summary(aov.bmC2)
+
+
+
+glm.2.1<-glm(RSratio ~ 1, family = gaussian, data = bmassC2)
+summary(glm.2.1)
+glm.2.2<-glm(RSratio ~ block, family = gaussian, data = bmassC2)
+summary(glm.2.2)
+glm.2.3<-glm(RSratio ~ trt, family = gaussian, data = bmassC2)
+summary(glm.2.3)
+glm.2.4<-glm(RSratio ~ Total.bmass, family = gaussian, data = bmassC2)
+summary(glm.2.4)
+glm.2.5<-glm(RSratio ~ trt+block, family = gaussian, data = bmassC2)
+summary(glm.2.5)
+glm.2.6<-glm(RSratio ~ trt+Total.bmass, family = gaussian, data = bmassC2)
+summary(glm.2.6)
+glm.2.7<-glm(RSratio ~ trt*Total.bmass+block, family = gaussian, data = bmassC2)
+summary(glm.2.7)
+# 
+anova(glm.2.1,glm.2.2, test = "Chisq")  #no imp fit by adding block over just intercept
+anova(glm.2.1,glm.2.3, test = "Chisq")  #imp fit by adding trt over just intercept
+anova(glm.2.1,glm.2.4, test = "Chisq")  #no imp fit by adding total bmass over just intercept (though lose...0.06)
+anova(glm.2.1,glm.2.5, test = "Chisq")  #no imp fit by adding total trt+block over just intercept
+anova(glm.2.1,glm.2.6, test = "Chisq")  #no imp fit by adding trt+total bmass over just intercept (though lose...0.06)
+anova(glm.2.1,glm.2.7, test = "Chisq")  #no imp fit by adding trt+total bmass + block over just intercept (though lose...0.06)
+
+AIC(glm.2.1, glm.2.2, glm.2.3,glm.2.4, glm.2.5, glm.2.6, glm.2.7)
+
+# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
+
+# THE JAMIE WAY
+summ.table2 <- do.call(rbind, lapply(list(glm.2.1, glm.2.2, glm.2.3,glm.2.4, glm.2.5, glm.2.6, glm.2.7), broom::glance))
+summ.table2
+table.cols2 <- c("df.residual", "deviance", "AIC")
+reported.table2 <- summ.table2[table.cols2]
+names(reported.table2) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table2[['dAIC']] <-  with(reported.table2, AIC - min(AIC))
+reported.table2[['weight']] <- with(reported.table2, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table2$AIC <- NULL
+reported.table2$weight <- round(reported.table2$weight, 2)
+reported.table2$dAIC <- round(reported.table2$dAIC, 1)
+#row.names2(reported.table2) <- model.names
+reported.table2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -775,25 +1040,23 @@ summary(aov.ht)
 with(rgrHT.test, interaction.plot(trt, cohort, rgr.ht),ylab = "RGR (height)", xlab = "treatment", trace.label = "Cohort")
 
 
-###################################################
-######      ANALYSES - BMASS  ###
-######################################################
 
-bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
-bmass[, "Total.bmass"] <-bmass$root.biomass+bmass$lf.biomass+bmass$stem.biomass
-bmass<-full_join(bmass, canopy, by = "block")
-bmass$location<-NULL
-bmass$site.openess.percent<-NULL
-bmass$mask.openess.percent<-NULL
-bmass$sky.area.percent<-NULL
-bmass$LAI.4.ring<-NULL 
-bmass$LAI.5.ring<-NULL
-str(bmass)
 
-#SIMPLER AS ANOVA
-#with focal only
-aov.bm<-aov(RSratio ~ trt+cohort+block/trt/cohort, data = bmass)
-summary(aov.bm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #with all
 
@@ -841,20 +1104,6 @@ hist(bmass.2$RSratio)
 aov.bmass.2<-aov(RSratio ~ trt+block, data = bmass.2)
 summary(aov.bmass.2)
 
-# Graph 
-bmass1Fig <- ggplot(bmass.1, aes(x=trt, y=RSratio)) + 
-  geom_boxplot()
-bmass1Fig
-
-bmass2Fig <- ggplot(bmass.2, aes(x=trt, y=RSratio)) + 
-  geom_boxplot()
-bmass2Fig
-
-# BOX PLOTS
-boxplot(ht.4~trt,data=ht.cohort2) #Cohort 1 ht final after 4
-
-
-
 
 
 
@@ -887,15 +1136,24 @@ plot.sdlgs[, "rgr.ht.0809"] <-(log(plot.sdlgs$ht.2009)-log(plot.sdlgs$ht.2008))/
 plot.sdlgs[, "rgr.ht.0810"] <-(log(plot.sdlgs$ht.2010)-log(plot.sdlgs$ht.2008))/365
 
 boxplot(rgr.ht.0810~trt,data=plot.sdlgs) #08 sdeedlings rgr 0810
+boxplot(ht.2008~trt,data=plot.sdlgs) #08 sflgs ht 08
+boxplot(ht.2009~trt,data=plot.sdlgs) #08 sflgs ht 09
 boxplot(ht.2010~trt,data=plot.sdlgs) #08 sflgs final ht 2010
 
 
 
-aov.plot.0810<-aov(rgr.ht.0810 ~ trt+light, data = plot.sdlgs)
+aov.plot.0810<-aov(rgr.ht.0810 ~ trt+light+ht.2008, data = plot.sdlgs)
 summary(aov.plot.0810)
 
-plot(plot.sdlgs$light,plot.sdlgs$rgr.ht.0810)
 
+
+plot(plot.sdlgs$ht.2008,plot.sdlgs$rgr.ht.0810)
+plot(plot.sdlgs$ht.2008,plot.sdlgs$ht.2010)
+
+
+ggplot(plot.sdlgs, aes(x=ht.2008, y=ht.2010, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
 
 
 
