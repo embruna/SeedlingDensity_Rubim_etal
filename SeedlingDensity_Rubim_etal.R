@@ -394,7 +394,10 @@ str(LARGR_BOTH)
 ##################
 #rgr.ht=(log(Exp_Data$ht.final)-log(Exp_Data$ht.initial))/Exp_Data$days
 
+# ########
 # COHORT 1
+# ########
+
 
 ht.cohort1<-Exp_Data_C1
 
@@ -497,19 +500,24 @@ str(HTRGR_BOTH)
 summary(LARGR_BOTH)
 
 ###################################################
-######      ANALYSES  --- GROWTH
+######      ANALYSES  --- LEAF AREA
 ######################################################
+
+# ########
+# COHORT 1
+# ########
 
 # Are final height and length correlated?
 COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
-ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt)), ]
+ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt, days)), ]
 sdlg_size_end<-as.data.frame(COHORT1.wide$LAt9)
-sdlg_size_end<-cbind(sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort))
+sdlg_size_end<-cbind(sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort),as.data.frame(ht.cohort1$days))
 names(sdlg_size_end)[1] <- "LA_final"
 names(sdlg_size_end)[2] <- "HT_final"
 names(sdlg_size_end)[3] <- "trt"
 names(sdlg_size_end)[4] <- "block"
 names(sdlg_size_end)[5] <- "cohort"
+names(sdlg_size_end)[6] <- "days"
 na.omit(sdlg_size_end)
 plot(sdlg_size_end)
 hist(sdlg_size_end$LA_final)
@@ -534,31 +542,36 @@ GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian)
 GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_end, family = gaussian)
 GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_end, family = gaussian)
 GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_end, family = gaussian)
+GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+days, data = sdlg_size_end, family = gaussian)
 
 anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
 anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
 anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
 anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
 anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt and trt*ht interaction and days
 
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6) #adding block doesn't result in lower AIC
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #adding block doesn't result in lower AIC
 
 # Anova version (can't use, unbalanced design)
 # LAreg <- lm(LA_final ~ HT_final*trt, data =sdlg_size_end )
 # anova(LAreg)
 # summary(LAreg)
 
-# 
-# COHORT 2 (can combine later)
+# ########
+# COHORT 2
+# ########
+
 COHORT2.wide<-COHORT2.wide[with(COHORT2.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
-ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, sdlg.type, block, trt)), ]
+ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, sdlg.type, block, trt, days)), ]
 sdlg_size_C2end<-as.data.frame(COHORT2.wide$LAt4)
-sdlg_size_C2end<-cbind(sdlg_size_C2end,as.data.frame(ht.cohort2$ht.4), as.data.frame(ht.cohort2$trt), as.data.frame(ht.cohort2$block),as.data.frame(ht.cohort2$cohort))
+sdlg_size_C2end<-cbind(sdlg_size_C2end,as.data.frame(ht.cohort2$ht.4), as.data.frame(ht.cohort2$trt), as.data.frame(ht.cohort2$block),as.data.frame(ht.cohort2$cohort),as.data.frame(ht.cohort2$days))
 names(sdlg_size_C2end)[1] <- "LA_final"
 names(sdlg_size_C2end)[2] <- "HT_final"
 names(sdlg_size_C2end)[3] <- "trt"
 names(sdlg_size_C2end)[4] <- "block"
 names(sdlg_size_C2end)[5] <- "cohort"
+names(sdlg_size_C2end)[6] <- "days"
 na.omit(sdlg_size_C2end)
 plot(sdlg_size_C2end)
 hist(sdlg_size_C2end$LA_final)
@@ -580,53 +593,18 @@ GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_C2end, family = gaussian)
 GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_C2end, family = gaussian)
 GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_C2end, family = gaussian)
 GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_C2end, family = gaussian)
+GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+days, data = sdlg_size_C2end, family = gaussian)
 
 anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
 anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
 anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
 anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
 anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_HT_LA6,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
 
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6) #for cohort 2 best model fit is just ht
-
-
-###NEED TO COMPARE a) end of year 1 for cohorts b) cohort 1 year 1 vs. 3
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #for cohort 2 best model fit is just ht
 
 
-# Both Together 
-BOTH<-rbind(sdlg_size_end, sdlg_size_C2end)
-summary(BOTH)
-BOTH$cohort<-as.factor(BOTH$cohort)
-BOTH$trt<-as.factor(BOTH$trt)
-BOTH$block<-as.factor(BOTH$block)
-
-
-GLM_HT_LA1<-glm(LA_final ~ 1, data = BOTH, family = gaussian)
-GLM_HT_LA2<-glm(LA_final ~ HT_final, data = BOTH, family = gaussian)
-GLM_HT_LA3<-glm(LA_final ~ trt, data = BOTH, family = gaussian)
-GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = BOTH, family = gaussian)
-GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = BOTH, family = gaussian)
-GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = BOTH, family = gaussian)
-GLM_HT_LA7<-glm(LA_final ~ HT_final*trt*cohort, data = BOTH, family = gaussian)
-GLM_HT_LA8<-glm(LA_final ~ HT_final*trt*cohort+block, data = BOTH, family = gaussian)
-
-model.names <- c("1 Intercept", "2 Height", "3 Treatment", "4 Height + Treatment", "5 Height*Treatment", "6 Height*Treatment+Block", "7 Height*Treatment*Cohort", "8 Height*Treatment*Cohort+Block")
-
-aov(GLM_HT_LA7)
-summary(GLM_HT_LA7)
-
-anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
-anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
-anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
-anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
-anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
-anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt*ht*cohort improvies
-anova(GLM_HT_LA7,GLM_HT_LA8, test = "Chisq")  #adding block to 7 doesn't!
-
-
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8) #for cohort 2 best model fit is just ht
-
-# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
 
 # THE JAMIE WAY
 summ.table <- do.call(rbind, lapply(list(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8), broom::glance))
@@ -647,6 +625,47 @@ reported.table
 reported.table2 <- bbmle::AICtab(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8, weights = TRUE, sort = FALSE, mnames = model.names)
 reported.table2[["Resid. Dev"]]  <- summ.table[["deviance"]] # get the deviance from broom'd table
 reported.table2
+
+
+
+
+
+
+# 
+# # Both Together 
+# BOTH<-rbind(sdlg_size_end, sdlg_size_C2end)
+# summary(BOTH)
+# BOTH$cohort<-as.factor(BOTH$cohort)
+# BOTH$trt<-as.factor(BOTH$trt)
+# BOTH$block<-as.factor(BOTH$block)
+# 
+# 
+# GLM_HT_LA1<-glm(LA_final ~ 1, data = BOTH, family = gaussian)
+# GLM_HT_LA2<-glm(LA_final ~ HT_final, data = BOTH, family = gaussian)
+# GLM_HT_LA3<-glm(LA_final ~ trt, data = BOTH, family = gaussian)
+# GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = BOTH, family = gaussian)
+# GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = BOTH, family = gaussian)
+# GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = BOTH, family = gaussian)
+# GLM_HT_LA7<-glm(LA_final ~ HT_final*trt*cohort, data = BOTH, family = gaussian)
+# GLM_HT_LA8<-glm(LA_final ~ HT_final*trt*cohort+block, data = BOTH, family = gaussian)
+# 
+# model.names <- c("1 Intercept", "2 Height", "3 Treatment", "4 Height + Treatment", "5 Height*Treatment", "6 Height*Treatment+Block", "7 Height*Treatment*Cohort", "8 Height*Treatment*Cohort+Block")
+# 
+# aov(GLM_HT_LA7)
+# summary(GLM_HT_LA7)
+# 
+# anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
+# anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
+# anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
+# anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
+# anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
+# anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt*ht*cohort improvies
+# anova(GLM_HT_LA7,GLM_HT_LA8, test = "Chisq")  #adding block to 7 doesn't!
+# 
+# 
+# AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8) #for cohort 2 best model fit is just ht
+
+# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
 
 
 
