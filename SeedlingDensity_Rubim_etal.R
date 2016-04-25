@@ -502,29 +502,123 @@ summary(LARGR_BOTH)
 ###################################################
 ######      ANALYSES  --- LEAF AREA
 ######################################################
+# Cohort 1
+
+COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
+ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt, days)), ]
+sdlg_size_start<-as.data.frame(COHORT1.wide$LAt1)
+sdlg_size_end<-as.data.frame(COHORT1.wide$LAt9)
+sdlg_size_end<-cbind(sdlg_size_start,sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort),as.data.frame(ht.cohort1$days))
+names(sdlg_size_end)[1] <- "LA_initial"
+names(sdlg_size_end)[2] <- "LA_final"
+names(sdlg_size_end)[3] <- "HT_final"
+names(sdlg_size_end)[4] <- "trt"
+names(sdlg_size_end)[5] <- "block"
+names(sdlg_size_end)[6] <- "cohort"
+names(sdlg_size_end)[7] <- "days"
+na.omit(sdlg_size_end)
+
+# Cohort 2
+COHORT2.wide<-COHORT2.wide[with(COHORT2.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
+
+ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, sdlg.type, block, trt, days)), ]
+
+# rename seedling id number
+# save as factorin both
+# full join
+
+as.factor(ht.cohort2$sdlg.id.no)
+full_join(ht.cohort2,COHORT2.wide,by="sdlg.id.no")
+sdlg_size_C2start<-as.data.frame(COHORT2.wide$LAt1)
+sdlg_size_C2end<-as.data.frame(COHORT2.wide$LAt4)
+cbind(sdlg_size_C2start,sdlg_size_C2end)
+
+sdlg_size_C2end<-cbind(sdlg_size_C2end,as.data.frame(ht.cohort2$ht.4), as.data.frame(ht.cohort2$trt), as.data.frame(ht.cohort2$block),as.data.frame(ht.cohort2$cohort),as.data.frame(ht.cohort2$days))
+names(sdlg_size_C2end)[1] <- "LA_final"
+names(sdlg_size_C2end)[2] <- "HT_final"
+names(sdlg_size_C2end)[3] <- "trt"
+names(sdlg_size_C2end)[4] <- "block"
+names(sdlg_size_C2end)[5] <- "cohort"
+names(sdlg_size_C2end)[6] <- "days"
+na.omit(sdlg_size_C2end)
+plot(sdlg_size_C2end)
+hist(sdlg_size_C2end$LA_final)
+hist(sdlg_size_C2end$HT_final)
+str(sdlg_size_C2end)
+summary(sdlg_size_C2end)
+
+# ######################################################
+# Is initial Leaf Area same accross treatments? Cohort 1
+# ######################################################
+
+boxplot(LAt1~trt,data=COHORT1.wide) #Cohort 1 LA initial by trt
+boxplot(LAt1~block,data=COHORT1.wide) #Cohort 1 LA initial by trt
+aov.LAt1C1<-aov(LAt1 ~ trt+block/trt, data = COHORT1.wide)
+summary(aov.LAt1C1)
+
+# INITIAL LEAF AREA - NO SINIFICANT DIFFERENCE AMONG TREATMENTS, ONLY AMONG BLOCKS.
+
+# ######################################################
+# Is initial Leaf Area same accross treatments? Cohort 2
+# ######################################################
+
+boxplot(LAt1~trt,data=COHORT2.wide) #Cohort 1 LA initial by trt
+boxplot(LAt1~block,data=COHORT2.wide) #Cohort 1 LA initial by trt
+aov.LAt1C1<-aov(LAt1 ~ trt+block/trt, data = COHORT2.wide)
+summary(aov.LAt1C1)
+
+# INITIAL LEAF AREA - NO SINIFICANT DIFFERENCE AMONG TREATMENTS, ONLY AMONG BLOCKS.
+
+
+# ######################################################
+# total leaf area after 12 months (Cohorts 1 and 2)
+# ######################################################
+# 
+#
+#
+# ######################################################
+# total leaf area after 24 months (Cohort 1)
+# ######################################################
+# 
+#
+#
+# ######################################################
+# total biomass after 12 months (Cohorts 1 and 2)
+# ######################################################
+# 
+#
+#
+# ######################################################
+# total biomass after 24 months (Cohort 1)
+# ######################################################
+# 
+#
+# 
+# ######################################################
+# root:shoot ratio after 12 months (Cohorts 1 and 2)
+# ######################################################
+# 
+#
+#
+# ######################################################
+# root:shoot ratio after 24 months (Cohort 1)
+# ######################################################
+
+
+
 
 # ########
 # COHORT 1
 # ########
 
 # Are final height and length correlated?
-COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
-ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt, days)), ]
-sdlg_size_end<-as.data.frame(COHORT1.wide$LAt9)
-sdlg_size_end<-cbind(sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort),as.data.frame(ht.cohort1$days))
-names(sdlg_size_end)[1] <- "LA_final"
-names(sdlg_size_end)[2] <- "HT_final"
-names(sdlg_size_end)[3] <- "trt"
-names(sdlg_size_end)[4] <- "block"
-names(sdlg_size_end)[5] <- "cohort"
-names(sdlg_size_end)[6] <- "days"
-na.omit(sdlg_size_end)
+
 plot(sdlg_size_end)
 hist(sdlg_size_end$LA_final)
 hist(sdlg_size_end$HT_final)
 str(sdlg_size_end)
 summary(sdlg_size_end)
-cor(sdlg_size_end[1:2], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
+cor(sdlg_size_end[2:3], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
 # HTvLA<-lm(sdlg_size_end$LA_final ~ sdlg_size_end$HT_final)
 # summary(HTvLA)
 
@@ -562,22 +656,6 @@ AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7
 # COHORT 2
 # ########
 
-COHORT2.wide<-COHORT2.wide[with(COHORT2.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
-ht.cohort2<-ht.cohort2[with(ht.cohort2, order(seedling.id.no, sdlg.type, block, trt, days)), ]
-sdlg_size_C2end<-as.data.frame(COHORT2.wide$LAt4)
-sdlg_size_C2end<-cbind(sdlg_size_C2end,as.data.frame(ht.cohort2$ht.4), as.data.frame(ht.cohort2$trt), as.data.frame(ht.cohort2$block),as.data.frame(ht.cohort2$cohort),as.data.frame(ht.cohort2$days))
-names(sdlg_size_C2end)[1] <- "LA_final"
-names(sdlg_size_C2end)[2] <- "HT_final"
-names(sdlg_size_C2end)[3] <- "trt"
-names(sdlg_size_C2end)[4] <- "block"
-names(sdlg_size_C2end)[5] <- "cohort"
-names(sdlg_size_C2end)[6] <- "days"
-na.omit(sdlg_size_C2end)
-plot(sdlg_size_C2end)
-hist(sdlg_size_C2end$LA_final)
-hist(sdlg_size_C2end$HT_final)
-str(sdlg_size_C2end)
-summary(sdlg_size_C2end)
 cor(sdlg_size_end[1:2], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
 
 ggplot(sdlg_size_C2end, aes(x=HT_final, y=LA_final, color=trt)) + geom_point(shape=1)+
