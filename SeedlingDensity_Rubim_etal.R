@@ -61,6 +61,8 @@ canopy<-read.csv("canopy_cover.csv", dec=".", header = TRUE, sep = ",", check.na
 bmass<-read.csv("final_sdlg_biomass.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # Make treatment an ordered factor (i.e., 1<2<4)
 bmass$trt <- ordered(bmass$trt, levels = c("one", "two", "four"))
+# Exclude blocks 17-19 from Cohort 1
+bmass<-bmass[!(bmass$cohort == "1" & bmass$block>16), ]
 
 # COHORT 1
 Exp_Data_C1<-read.csv("EXP_DATA_COHORT1_26nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
@@ -69,21 +71,19 @@ Exp_Data_C1$trt <- ordered(Exp_Data_C1$trt, levels = c("one", "two", "four"))
 #Rubim included three more blocks after the experiment started to increase the sample siz - Blocks 17, 18, 19 - but they weren't in the ground
 #nearly as long as the others. I would suggest excluding them from the analyses. The following line does that.
 Exp_Data_C1<-Exp_Data_C1[Exp_Data_C1$block<17,]
-summary(Exp_Data_C1)
+#summary(Exp_Data_C1)
 
 # COHORT 2
 Exp_Data_C2<-read.csv("EXP_DATA_COHORT2_20nov2014.csv", dec=".", header = TRUE, sep = ",", check.names=FALSE )
 # Make treatment an ordered factor (i.e., 1<2<4)
 Exp_Data_C2$trt <- ordered(Exp_Data_C2$trt, levels = c("one", "two", "four"))
-summary(Exp_Data_C2)
+#summary(Exp_Data_C2)
 
 
 
 ##################
-### 
 ### CALCULATE THE TOTAL LEAF AREA OF EACH SEEDLING
 ### NOTE THAT STEP 2 and STEP 3 are essentially the same thing, should be made into a function!!!!
-###
 ##################
 
 ##################
@@ -188,8 +188,7 @@ cohort2.la[, "uncorrected.leaf.area"] <- 0.53+(0.831*cohort2.la$leaf.length)
 #then adds a column with the "corrected" leaf area (i.e., corrected leaf area - % missing) 
 cohort2.la$leaf.percentage.missing[is.na(cohort2.la$leaf.percentage.missing)] <- 0
 cohort2.la[, "corrected.leaf.area"] <-cohort2.la$uncorrected.leaf.area - (cohort2.la$uncorrected.leaf.area*(cohort2.la$leaf.percentage.missing/100))
-
-str(cohort2.la)
+#str(cohort2.la)
 
 
 
@@ -291,10 +290,6 @@ COHORT2.wide[, "rgrLA_yr1"] <-(log(COHORT2.wide$LAt4)-log(COHORT2.wide$LAt1))/CO
 # str(COHORT1.wide)
 # summary(COHORT1.wide)
 
-# Box plot of median leaf area of plants in each block at T1 
-boxplot(LAt1~block,data=COHORT1.wide) #Cohort 1
-boxplot(LAt1~block,data=COHORT2.wide) #Cohort2
-
 # hist(COHORT1.wide$rgrLA_2yrs)
 # hist(COHORT1.wide$rgrLA_yr1)
 # hist(COHORT2.wide$rgrLA_yr2)
@@ -312,82 +307,8 @@ boxplot(LAt1~block,data=COHORT2.wide) #Cohort2
 # rgrALL2 <- ggplot(COHORT2.wide, aes(x=trt, y=rgrLA_yr2)) + 
 #   geom_boxplot()
 # rgrALL2
-
-
-####### PUTTING BOTH COHORTS TOGETHER - RGR #######
-# Cohort 1
-LFAREA_1_RGR<-COHORT1.wide
-LFAREA_1_RGR <- LFAREA_1_RGR[ -c(7:15)]
-LFAREA_1_RGR<-gather(LFAREA_1_RGR, "interval", "rgr.la", 7:14)  
-
-# Cohort 2
-LFAREA_2_RGR<-COHORT2.wide
-LFAREA_2_RGR <- LFAREA_2_RGR[ -c(7:10)]
-LFAREA_2_RGR<-gather(LFAREA_2_RGR, "interval", "rgr.la", 7:10)  
-# str(LFAREA_1_RGR)
-# str(LFAREA_2_RGR)
-
-#Bind the 2
-LARGR_BOTH<-rbind(LFAREA_1_RGR,LFAREA_2_RGR)
-LARGR_BOTH[, "season"] <-0
-LARGR_BOTH[, "calendar_year"] <-0
-LARGR_BOTH[, "cohort_year"] <-0
-LARGR_BOTH[, "duration"] <-0
-
-LARGR_BOTH$interval <- as.character(LARGR_BOTH$interval)
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet1' ] <- 'rainy')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet2' ] <- 'rainy')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_wet3' ] <- 'rainy')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry1' ] <- 'dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_dry2' ] <- 'dry')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr1' ] <- '1R1D')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yr2' ] <- '2R1D')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_yrs1-2' ] <- '3R2D')
-LARGR_BOTH <- within(LARGR_BOTH, season[interval == 'rgrLA_1yr' ] <- '2R1D')
-
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet1' ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_dry1' ] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet2' ] <- '2009')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_dry2' ] <- '2009')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_wet3' ] <- '2010')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr1'  & cohort == 1] <- '2008')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr2'  & cohort == 1] <- '2009-2010')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yrs1-2'] <- '2008-2010')
-LARGR_BOTH <- within(LARGR_BOTH, calendar_year[interval == 'rgrLA_yr1'  & cohort == 2] <- '2009-2010')
-
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet1'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet2'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_wet3'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry1'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_dry2'] <- "seasonal")
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1' & cohort == 1  ] <- 'annual')
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr2' & cohort == 1  ] <- 'annual')
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yr1' & cohort == 2  ] <- 'annual')
-LARGR_BOTH <- within(LARGR_BOTH, duration[interval == 'rgrLA_yrs1-2' & cohort == 1] <- 'multiyear')
-
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet1' & cohort == 1  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry1' & cohort == 1  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet2' & cohort == 1  ] <- 'cohort_yr_2')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry2' & cohort == 1  ] <- 'cohort_yr_2')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet3' & cohort == 1  ] <- 'cohort_yr_2')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet2' & cohort == 2  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_dry2' & cohort == 2  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_wet3' & cohort == 2  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr1' & cohort == 1  ] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr2' & cohort == 1] <- 'cohort_yr_2')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yr1' & cohort == 2] <- 'cohort_yr_1')
-LARGR_BOTH <- within(LARGR_BOTH, cohort_year[interval == 'rgrLA_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
-
-# COnvert back to factors
-LARGR_BOTH$interval <- as.factor(LARGR_BOTH$interval)
-LARGR_BOTH$season <- as.factor(LARGR_BOTH$season)
-LARGR_BOTH$calendar_year <- as.factor(LARGR_BOTH$calendar_year)
-LARGR_BOTH$cohort_year <- as.factor(LARGR_BOTH$cohort_year)
-LARGR_BOTH$duration <- as.factor(LARGR_BOTH$duration)
-summary(LARGR_BOTH)
-str(LARGR_BOTH)
-
+# 
+# 
 
 #################
 ###CALCLULATIONS OF RGR BAsed on seedling height
@@ -432,90 +353,27 @@ ht.cohort2.1<-gather(ht.cohort2.1, "interval", "rgr.ht", 8:11)
 str(ht.cohort1.1)
 str(ht.cohort2.1)
 
-HTRGR_BOTH<-rbind(ht.cohort1.1,ht.cohort2.1)
-HTRGR_BOTH[, "season"] <-0
-HTRGR_BOTH[, "calendar_year"] <-0
-HTRGR_BOTH[, "cohort_year"] <-0
-HTRGR_BOTH[, "duration"] <-0
-
-HTRGR_BOTH$interval <- as.character(HTRGR_BOTH$interval)
-
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet1' ] <- 'rainy')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet2' ] <- 'rainy')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_wet3' ] <- 'rainy')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry1' ] <- 'dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_dry2' ] <- 'dry')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr1' ] <- '1R1D')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yr2' ] <- '2R1D')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_yrs1-2' ] <- '3R2D')
-HTRGR_BOTH <- within(HTRGR_BOTH, season[interval == 'rgrHT_1yr' ] <- '2R1D')
-
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet1' ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_dry1' ] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet2' ] <- '2009')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_dry2' ] <- '2009')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_wet3' ] <- '2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr1'  & cohort == 1] <- '2008')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr2'  & cohort == 1] <- '2009-2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yrs1-2'] <- '2008-2010')
-HTRGR_BOTH <- within(HTRGR_BOTH, calendar_year[interval == 'rgrHT_yr1'  & cohort == 2] <- '2009-2010')
-
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet1'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet2'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_wet3'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry1'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_dry2'] <- "seasonal")
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1' & cohort == 1  ] <- 'annual')
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr2' & cohort == 1  ] <- 'annual')
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yr1' & cohort == 2  ] <- 'annual')
-HTRGR_BOTH <- within(HTRGR_BOTH, duration[interval == 'rgrHT_yrs1-2' & cohort == 1] <- 'multiyear')
-
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet1' & cohort == 1  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry1' & cohort == 1  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet2' & cohort == 1  ] <- 'cohort_yr_2')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry2' & cohort == 1  ] <- 'cohort_yr_2')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet3' & cohort == 1  ] <- 'cohort_yr_2')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet2' & cohort == 2  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_dry2' & cohort == 2  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_wet3' & cohort == 2  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr1' & cohort == 1  ] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr2' & cohort == 1] <- 'cohort_yr_2')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yr1' & cohort == 2] <- 'cohort_yr_1')
-HTRGR_BOTH <- within(HTRGR_BOTH, cohort_year[interval == 'rgrHT_yrs1-2' & cohort == 1] <- 'cohort_yr_1+2')
-
-# Convert back to factors
-HTRGR_BOTH$interval <- as.factor(HTRGR_BOTH$interval)
-HTRGR_BOTH$season <- as.factor(HTRGR_BOTH$season)
-HTRGR_BOTH$calendar_year <- as.factor(HTRGR_BOTH$calendar_year)
-HTRGR_BOTH$cohort_year <- as.factor(HTRGR_BOTH$cohort_year)
-HTRGR_BOTH$duration <- as.factor(HTRGR_BOTH$duration)
-summary(HTRGR_BOTH)
-str(HTRGR_BOTH)
-
-HTRGR_BOTH<-HTRGR_BOTH[with(HTRGR_BOTH, order(block, trt, sdlg.type,seedling.id.no, decreasing = FALSE)), ]
-LARGR_BOTH<-LARGR_BOTH[with(LARGR_BOTH, order(block, trt, sdlg.type,sdlg.id.no, decreasing = FALSE)), ]
-str(HTRGR_BOTH)
-# summary(ht.cohort2)
-summary(LARGR_BOTH)
 
 ###################################################
-######      ANALYSES  --- LEAF AREA
+######      PREP DATA FOR ANALYSES  --- LEAF AREA
 ######################################################
+
 # Cohort 1
 
 COHORT1.wide<-COHORT1.wide[with(COHORT1.wide, order(sdlg.id.no, sdlg.type, block, trt)), ]
 ht.cohort1<-ht.cohort1[with(ht.cohort1, order(seedling.id.no, sdlg.type, block, trt, days)), ]
 sdlg_size_start<-as.data.frame(COHORT1.wide$LAt1)
+sdlg_size_middle<-as.data.frame(COHORT1.wide$LAt6)
 sdlg_size_end<-as.data.frame(COHORT1.wide$LAt9)
-sdlg_size_end<-cbind(sdlg_size_start,sdlg_size_end,as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort),as.data.frame(ht.cohort1$days))
+sdlg_size_end<-cbind(sdlg_size_start,sdlg_size_middle, sdlg_size_end, as.data.frame(ht.cohort1$ht.9),as.data.frame(ht.cohort1$trt),as.data.frame(ht.cohort1$block),as.data.frame(ht.cohort1$cohort),as.data.frame(ht.cohort1$days))
 names(sdlg_size_end)[1] <- "LA_initial"
-names(sdlg_size_end)[2] <- "LA_final"
-names(sdlg_size_end)[3] <- "HT_final"
-names(sdlg_size_end)[4] <- "trt"
-names(sdlg_size_end)[5] <- "block"
-names(sdlg_size_end)[6] <- "cohort"
-names(sdlg_size_end)[7] <- "days"
+names(sdlg_size_end)[2] <- "LA_middle"
+names(sdlg_size_end)[3] <- "LA_final"
+names(sdlg_size_end)[4] <- "HT_final"
+names(sdlg_size_end)[5] <- "trt"
+names(sdlg_size_end)[6] <- "block"
+names(sdlg_size_end)[7] <- "cohort"
+names(sdlg_size_end)[8] <- "days"
 na.omit(sdlg_size_end)
 
 # Cohort 2
@@ -564,8 +422,8 @@ summary(aov.LAt1C1)
 
 boxplot(LAt1~trt,data=COHORT2.wide) #Cohort 1 LA initial by trt
 boxplot(LAt1~block,data=COHORT2.wide) #Cohort 1 LA initial by trt
-aov.LAt1C1<-aov(LAt1 ~ trt+block/trt, data = COHORT2.wide)
-summary(aov.LAt1C1)
+aov.LAt1C2<-aov(LAt1 ~ trt+block/trt, data = COHORT2.wide)
+summary(aov.LAt1C2)
 
 # INITIAL LEAF AREA - NO SINIFICANT DIFFERENCE AMONG TREATMENTS, ONLY AMONG BLOCKS.
 
@@ -574,118 +432,52 @@ summary(aov.LAt1C1)
 # total leaf area after 12 months (Cohorts 1 and 2)
 # ######################################################
 # 
-#
-#
-# ######################################################
-# total leaf area after 24 months (Cohort 1)
-# ######################################################
-# 
-#
-#
-# ######################################################
-# total biomass after 12 months (Cohorts 1 and 2)
-# ######################################################
-# 
-#
-#
-# ######################################################
-# total biomass after 24 months (Cohort 1)
-# ######################################################
-# 
-#
-# 
-# ######################################################
-# root:shoot ratio after 12 months (Cohorts 1 and 2)
-# ######################################################
-# 
-#
-#
-# ######################################################
-# root:shoot ratio after 24 months (Cohort 1)
-# ######################################################
 
 
 
 
-# ########
-# COHORT 1
-# ########
+ONE_YR_LA_C1<-dplyr::select(COHORT1.wide,cohort, block, trt, sdlg.type, LAt1,LAt6)
+names(ONE_YR_LA_C1)[5] <- "LA_initial"
+names(ONE_YR_LA_C1)[6] <- "LA_final"
+ONE_YR_LA_C2<-dplyr::select(COHORT2.wide,cohort, block, trt, sdlg.type, LAt1,LAt4)
+names(ONE_YR_LA_C2)[5] <- "LA_initial"
+names(ONE_YR_LA_C2)[6] <- "LA_final"
+ONE_YEAR_LA<-rbind(ONE_YR_LA_C1,ONE_YR_LA_C2)
+ONE_YEAR_LA$cohort<-as.factor(ONE_YEAR_LA$cohort)
 
-# Are final height and length correlated?
 
-plot(sdlg_size_end)
-hist(sdlg_size_end$LA_final)
-hist(sdlg_size_end$HT_final)
-str(sdlg_size_end)
-summary(sdlg_size_end)
-cor(sdlg_size_end[2:3], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
-# HTvLA<-lm(sdlg_size_end$LA_final ~ sdlg_size_end$HT_final)
-# summary(HTvLA)
+summary(ONE_YEAR_LA)
 
-ggplot(sdlg_size_end, aes(x=HT_final, y=LA_final, color=trt)) + geom_point(shape=1)+
+# Visulaization
+ggplot(ONE_YEAR_LA, aes(x=LA_initial, y=LA_final, color=trt)) + geom_point(shape=1)+
   geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
   geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
 
 
-hist(sdlg_size_end$LA_final)
-hist(sdlg_size_end$HT_final)
+GLM_HT_LA1<-glm(LA_final ~ 1, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA2<-glm(LA_final ~ LA_initial, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA3<-glm(LA_final ~ trt, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA4<-glm(LA_final ~ cohort, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA5<-glm(LA_final ~ block, data = ONE_YEAR_LA, family = gaussian)
 
-GLM_HT_LA1<-glm(LA_final ~ 1, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA2<-glm(LA_final ~ HT_final, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_end, family = gaussian)
-GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+days, data = sdlg_size_end, family = gaussian)
-
-anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
-anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
-anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
-anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
-anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
-anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt and trt*ht interaction and days
-
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #adding block doesn't result in lower AIC
-
-# Anova version (can't use, unbalanced design)
-# LAreg <- lm(LA_final ~ HT_final*trt, data =sdlg_size_end )
-# anova(LAreg)
-# summary(LAreg)
-
-# ########
-# COHORT 2
-# ########
-
-cor(sdlg_size_end[1:2], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
-
-ggplot(sdlg_size_C2end, aes(x=HT_final, y=LA_final, color=trt)) + geom_point(shape=1)+
-  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
-  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
-
-hist(sdlg_size_C2end$LA_final)
-hist(sdlg_size_C2end$HT_final)
-
-GLM_HT_LA1<-glm(LA_final ~ 1, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA2<-glm(LA_final ~ HT_final, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = sdlg_size_C2end, family = gaussian)
-GLM_HT_LA7<-glm(LA_final ~ HT_final*trt+days, data = sdlg_size_C2end, family = gaussian)
-
-anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
-anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
-anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
-anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
-anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
-anova(GLM_HT_LA6,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
-
-AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7) #for cohort 2 best model fit is just ht
+GLM_HT_LA6<-glm(LA_final ~ LA_initial+trt, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA7<-glm(LA_final ~ LA_initial+block, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA8<-glm(LA_final ~ LA_initial+cohort, data = ONE_YEAR_LA, family = gaussian)
+GLM_HT_LA9<-glm(LA_final ~ LA_initial*cohort*trt+block, data = ONE_YEAR_LA, family = gaussian)
 
 
+anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding LA t1  over just intercept
+anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  # imp fit by adding trt over just intercept 
+anova(GLM_HT_LA1,GLM_HT_LA4, test = "Chisq")  # imp fit by adding cohort instead of intercept
+anova(GLM_HT_LA1,GLM_HT_LA5, test = "Chisq")  #imp fit by adding block instead of intercept
+anova(GLM_HT_LA6,GLM_HT_LA7, test = "Chisq")  
+anova(GLM_HT_LA7,GLM_HT_LA2, test = "Chisq")  
+anova(GLM_HT_LA2,GLM_HT_LA7, test = "Chisq")  
+anova(GLM_HT_LA2,GLM_HT_LA8, test = "Chisq")  
 
-# THE JAMIE WAY
-summ.table <- do.call(rbind, lapply(list(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8), broom::glance))
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8,GLM_HT_LA9) #for cohort 2 best model fit is just ht
+
+summ.table <- do.call(rbind, lapply(list(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8,GLM_HT_LA9), broom::glance))
 summ.table
 table.cols <- c("df.residual", "deviance", "AIC")
 reported.table <- summ.table[table.cols]
@@ -703,55 +495,91 @@ reported.table
 reported.table2 <- bbmle::AICtab(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8, weights = TRUE, sort = FALSE, mnames = model.names)
 reported.table2[["Resid. Dev"]]  <- summ.table[["deviance"]] # get the deviance from broom'd table
 reported.table2
-
-
-
-
-
-
+#
+# ######################################################
+# total leaf area after 24 months (Cohort 1)
+# ######################################################
 # 
-# # Both Together 
-# BOTH<-rbind(sdlg_size_end, sdlg_size_C2end)
-# summary(BOTH)
-# BOTH$cohort<-as.factor(BOTH$cohort)
-# BOTH$trt<-as.factor(BOTH$trt)
-# BOTH$block<-as.factor(BOTH$block)
-# 
-# 
-# GLM_HT_LA1<-glm(LA_final ~ 1, data = BOTH, family = gaussian)
-# GLM_HT_LA2<-glm(LA_final ~ HT_final, data = BOTH, family = gaussian)
-# GLM_HT_LA3<-glm(LA_final ~ trt, data = BOTH, family = gaussian)
-# GLM_HT_LA4<-glm(LA_final ~ HT_final+trt, data = BOTH, family = gaussian)
-# GLM_HT_LA5<-glm(LA_final ~ HT_final*trt, data = BOTH, family = gaussian)
-# GLM_HT_LA6<-glm(LA_final ~ HT_final*trt+block, data = BOTH, family = gaussian)
-# GLM_HT_LA7<-glm(LA_final ~ HT_final*trt*cohort, data = BOTH, family = gaussian)
-# GLM_HT_LA8<-glm(LA_final ~ HT_final*trt*cohort+block, data = BOTH, family = gaussian)
-# 
-# model.names <- c("1 Intercept", "2 Height", "3 Treatment", "4 Height + Treatment", "5 Height*Treatment", "6 Height*Treatment+Block", "7 Height*Treatment*Cohort", "8 Height*Treatment*Cohort+Block")
-# 
-# aov(GLM_HT_LA7)
-# summary(GLM_HT_LA7)
-# 
-# anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
-# anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept 
-# anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
-# anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
-# anova(GLM_HT_LA4,GLM_HT_LA5, test = "Chisq")  #adding trt and trt*ht interaction best
-# anova(GLM_HT_LA5,GLM_HT_LA7, test = "Chisq")  #adding trt*ht*cohort improvies
-# anova(GLM_HT_LA7,GLM_HT_LA8, test = "Chisq")  #adding block to 7 doesn't!
-# 
-# 
-# AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8) #for cohort 2 best model fit is just ht
 
-# TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
+# Are final height and length correlated?
+
+plot(sdlg_size_end)
+hist(sdlg_size_end$LA_final)
+hist(sdlg_size_end$HT_final)
+str(sdlg_size_end)
+summary(sdlg_size_end)
+cor(sdlg_size_end[2:3], method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
+# Visualizations
+
+ggplot(sdlg_size_end, aes(x=LA_initial, y=LA_final, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+ggplot(sdlg_size_end, aes(x=days, y=LA_final, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+boxplot(LA_final~trt,data=sdlg_size_end) #Cohort 1 LA initial by trt
+boxplot(LA_final~block,data=sdlg_size_end) #Cohort 1 LA initial by block
+boxplot(LA_final~days,data=sdlg_size_end) #Cohort 1 LA initial by block
+
+hist(sdlg_size_end$LA_final)
+hist(sdlg_size_end$LA_final)
+
+GLM_HT_LA1<-glm(LA_final ~ 1, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA1)
+GLM_HT_LA2<-glm(LA_final ~ LA_initial, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA2)
+GLM_HT_LA3<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA3)
+GLM_HT_LA4<-glm(LA_final ~ LA_initial+trt, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA4)
+GLM_HT_LA5<-glm(LA_final ~ LA_initial*trt, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA5)
+GLM_HT_LA6<-glm(LA_final ~ LA_initial+trt+block, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA6)
+GLM_HT_LA7<-glm(LA_final ~ LA_initial+trt+days, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA7)
+GLM_HT_LA8<-glm(LA_final ~ LA_initial+trt*days, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA8)
+GLM_HT_LA9<-glm(LA_final ~ LA_initial+trt+block+days, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA9)
+GLM_HT_LA10<-glm(LA_final ~ LA_initial+trt*days+block, data = sdlg_size_end, family = gaussian)
+summary(GLM_HT_LA10)
 
 
+anova(GLM_HT_LA1,GLM_HT_LA2, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_HT_LA1,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_HT_LA2,GLM_HT_LA3, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_HT_LA2,GLM_HT_LA4, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_HT_LA4,GLM_HT_LA7, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_HT_LA7,GLM_HT_LA8, test = "Chisq")  #adding trt and trt*ht interaction and days
 
+AIC(GLM_HT_LA1,GLM_HT_LA2,GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8, GLM_HT_LA9, GLM_HT_LA10) #adding block doesn't result in lower AIC
 
+summ.table <- do.call(rbind, lapply(list(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8,GLM_HT_LA9, GLM_HT_LA10), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
 
-###################################################
-######      ANALYSES - BMASS  ###
-######################################################
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+# THE BOLKER WAY 
+reported.table2 <- bbmle::AICtab(GLM_HT_LA1, GLM_HT_LA2, GLM_HT_LA3,GLM_HT_LA4,GLM_HT_LA5,GLM_HT_LA6,GLM_HT_LA7,GLM_HT_LA8, weights = TRUE, sort = FALSE, mnames = model.names)
+reported.table2[["Resid. Dev"]]  <- summ.table[["deviance"]] # get the deviance from broom'd table
+reported.table2
+
+# ######################################################
+# ######################################################
+# BIOMASS ANALYSES - SET UP
+# ######################################################
+# ####################################################### ######################################################
 
 bmass[, "RSratio"] <-(bmass$root.biomass/(bmass$lf.biomass+bmass$stem.biomass))
 bmass[, "Total.bmass"] <-bmass$root.biomass+bmass$lf.biomass+bmass$stem.biomass
@@ -762,7 +590,24 @@ bmass$mask.openess.percent<-NULL
 bmass$sky.area.percent<-NULL
 bmass$LAI.4.ring<-NULL 
 bmass$LAI.5.ring<-NULL
+bmass$cohort<-as.factor(bmass$cohort)
+bmass$block<-as.integer(bmass$block)
+
+
+
+bmass<-arrange(bmass,cohort,block,trt)
+
+LA_for_Bmass<-dplyr::filter(ONE_YEAR_LA,sdlg.type=="focal")
+LA_for_Bmass<-droplevels(LA_for_Bmass)
+LA_for_Bmass<-arrange(LA_for_Bmass,cohort,block,trt)
+
+str(LA_for_Bmass)
 str(bmass)
+
+bmass<-cbind(bmass,LA_for_Bmass$LA_initial,LA_for_Bmass$LA_final)
+
+names(bmass)[11] <- "LA_initial"
+names(bmass)[12] <- "LA_final"
 
 bmassC1<-filter(bmass,  cohort == "1") #cohort 1 after 2 years
 bmassC1$cohort<-as.factor(bmassC1$cohort)
@@ -770,26 +615,229 @@ bmassC1$cohort<-as.factor(bmassC1$cohort)
 bmassC2<-filter(bmass,  cohort == "2") #cohort 2 after 1 year
 bmassC2$cohort<-as.factor(bmassC2$cohort)
 
-# VISUALIZATIONS
+
+
+#Corr of leaf area and biomass
+corr1<-bmass$Total.bmass
+corr2<-bmass$LA_final
+CORR<-cbind(corr1,corr2)
+cor(CORR, method="spearman", use="complete.obs")  #Storng correlation between final leaf area and final height
+# Visualizations
+
+ggplot(bmass, aes(x=LA_initial, y=Total.bmass, color=trt)) + geom_point(shape=1)+
+  geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
+
+
+# ######################################################
+# total biomass after 12 months (Cohort 2)
+# ######################################################
+# 
+# Histogram
+hist(bmassC2$Total.bmass)
+# BOX PLOTS
+boxplot(Total.bmass~trt,data=bmassC2) #Cohort bmass final
 
 
 
-# HISTOGRAMS
+GLM_BM_1<-glm(Total.bmass ~ 1, data = bmassC2, family = gaussian)
+summary(GLM_BM_1)
+GLM_BM_2<-glm(Total.bmass ~ LA_initial, data = bmassC2, family = gaussian)
+summary(GLM_BM_2)
+GLM_BM_3<-glm(Total.bmass ~ trt, data = bmassC2, family = gaussian)
+summary(GLM_BM_3)
+GLM_BM_4<-glm(Total.bmass ~ block, data = bmassC2, family = gaussian)
+summary(GLM_BM_4)
+GLM_BM_5<-glm(Total.bmass ~ trt+block, data = bmassC2, family = gaussian)
+summary(GLM_BM_5)
+GLM_BM_6<-glm(Total.bmass ~ trt+LA_initial+block, data = bmassC2, family = gaussian)
+summary(GLM_BM_6)
+
+
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and trt*ht interaction and days
+
+AIC(GLM_BM_1,GLM_BM_2,GLM_BM_3,GLM_BM_4,GLM_BM_5,GLM_BM_6) #adding block doesn't result in lower AIC
+
+summ.table <- do.call(rbind, lapply(list(GLM_BM_1, GLM_BM_2, GLM_BM_3,GLM_BM_4,GLM_BM_5,GLM_BM_6), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+
+
+
+
+
+
+#
+# ######################################################
+# total biomass after 24 months (Cohort 1)
+# ######################################################
+# 
+## HISTOGRAM
+hist(bmassC1$Total.bmass)
+## Boxplot
+boxplot(Total.bmass~block,data=bmassC1) #Cohort 1 Bmass final
+
+
+
+
+GLM_BM_1<-glm(Total.bmass ~ 1, data = bmassC1, family = gaussian)
+summary(GLM_BM_1)
+GLM_BM_2<-glm(Total.bmass ~ LA_initial, data = bmassC1, family = gaussian)
+summary(GLM_BM_2)
+GLM_BM_3<-glm(Total.bmass ~ trt, data = bmassC1, family = gaussian)
+summary(GLM_BM_3)
+GLM_BM_4<-glm(Total.bmass ~ block, data = bmassC1, family = gaussian)
+summary(GLM_BM_4)
+GLM_BM_5<-glm(Total.bmass ~ trt+block, data = bmassC1, family = gaussian)
+summary(GLM_BM_5)
+GLM_BM_6<-glm(Total.bmass ~ trt+LA_initial+block, data = bmassC1, family = gaussian)
+summary(GLM_BM_6)
+
+
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_BM_1,GLM_BM_1, test = "Chisq")  #adding trt and trt*ht interaction and days
+
+AIC(GLM_BM_1,GLM_BM_2,GLM_BM_3,GLM_BM_4,GLM_BM_5,GLM_BM_6) #adding block doesn't result in lower AIC
+
+summ.table <- do.call(rbind, lapply(list(GLM_BM_1, GLM_BM_2, GLM_BM_3,GLM_BM_4,GLM_BM_5,GLM_BM_6), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+
+
+
+
+
+
+# ######################################################
+# root:shoot ratio after 12 months (Cohort 2)
+# ######################################################
+# 
+# Histogram
+hist(bmassC2$RSratio)
+# BOX PLOTS
+boxplot(RSratio~trt,data=bmassC2) #Cohort 2 RS final
+#
+
+
+GLM_RS_1<-glm(RSratio ~ 1, data = bmassC2, family = gaussian)
+summary(GLM_RS_1)
+GLM_RS_2<-glm(RSratio ~ Total.bmass, data = bmassC2, family = gaussian)
+summary(GLM_RS_2)
+GLM_RS_3<-glm(RSratio ~ trt, data = bmassC2, family = gaussian)
+summary(GLM_RS_3)
+GLM_RS_4<-glm(RSratio ~ block, data = bmassC2, family = gaussian)
+summary(GLM_RS_4)
+GLM_RS_5<-glm(RSratio ~ trt+block, data = bmassC2, family = gaussian)
+summary(GLM_RS_5)
+GLM_RS_6<-glm(RSratio ~ trt+Total.bmass+block, data = bmassC2, family = gaussian)
+summary(GLM_RS_6)
+
+
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and trt*ht interaction and days
+
+AIC(GLM_RS_1,GLM_RS_2,GLM_RS_3,GLM_RS_4,GLM_RS_5,GLM_RS_6) #adding block doesn't result in lower AIC
+
+summ.table <- do.call(rbind, lapply(list(GLM_RS_1, GLM_RS_2, GLM_RS_3,GLM_RS_4,GLM_RS_5,GLM_RS_6), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+
+
+
+# ######################################################
+# root:shoot ratio after 24 months (Cohort 1)
+# ######################################################
+## HISTOGRAMS
 # COHORT 1
 hist(bmassC1$RSratio)
-hist(bmassC1$Total.bmass)
-# COHORT 2
-hist(bmassC2$RSratio)
-hist(bmassC2$Total.bmass)
-
-
 # BOX PLOTS
-# COHORT 1
 boxplot(RSratio~trt,data=bmassC1) #Cohort 1 RS final
-boxplot(Total.bmass~trt,data=bmassC1) #Cohort 1 Bmass final
-# COHORT 2
-boxplot(RSratio~trt,data=bmassC2) #Cohort 2 RS final 
-boxplot(Total.bmass~trt,data=bmassC2) #Cohort bmass final
+
+
+GLM_RS_1<-glm(RSratio ~ 1, data = bmassC1, family = gaussian)
+summary(GLM_RS_1)
+GLM_RS_2<-glm(RSratio ~ Total.bmass, data = bmassC1, family = gaussian)
+summary(GLM_RS_2)
+GLM_RS_3<-glm(RSratio ~ trt, data = bmassC1, family = gaussian)
+summary(GLM_RS_3)
+GLM_RS_4<-glm(RSratio ~ block, data = bmassC1, family = gaussian)
+summary(GLM_RS_4)
+GLM_RS_5<-glm(RSratio ~ trt+block, data = bmassC1, family = gaussian)
+summary(GLM_RS_5)
+GLM_RS_6<-glm(RSratio ~ trt+Total.bmass+block, data = bmassC1, family = gaussian)
+summary(GLM_RS_6)
+
+
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #imp fit by adding HT over just intercept
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #no imp fit by adding trt instead of ht
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and ht better than just ht 
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_RS_1,GLM_RS_1, test = "Chisq")  #adding trt and trt*ht interaction and days
+
+AIC(GLM_RS_1,GLM_RS_2,GLM_RS_3,GLM_RS_4,GLM_RS_5,GLM_RS_6) #adding block doesn't result in lower AIC
+
+summ.table <- do.call(rbind, lapply(list(GLM_RS_1, GLM_RS_2, GLM_RS_3,GLM_RS_4,GLM_RS_5,GLM_RS_6), broom::glance))
+summ.table
+table.cols <- c("df.residual", "deviance", "AIC")
+reported.table <- summ.table[table.cols]
+names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+
+reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
+reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.table$AIC <- NULL
+reported.table$weight <- round(reported.table$weight, 2)
+reported.table$dAIC <- round(reported.table$dAIC, 1)
+row.names(reported.table) <- model.names
+reported.table
+
+######################################################
+######      VISUALIZATIONS - BMASS  & RS Ratio     ###
+######################################################
+
 
 # PLOTS OF RS Ratio (Y) vs Total Biomass (X) BY TREATMENT
 # COHORT 1
@@ -807,9 +855,54 @@ ggplot(bmassC2, aes(x=Total.bmass, y=RSratio, color=trt)) + geom_point(shape=1)+
 
 
 
-##########
-# ANALYSES (note: with focal only)
-##########
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ##########
 # COHORT 1
