@@ -534,10 +534,6 @@ print(la2yr_plot)
 
 
 
-
-
-
-
 ggplot(sdlg_size_end, aes(x=days, y=LA_final, color=trt)) + geom_point(shape=1)+
   geom_point(shape=1, position=position_jitter(width=1,height=.5))+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
   geom_smooth(method=lm, se=FALSE)    #Add linear regression lines and Don't add shaded confidence region
@@ -688,6 +684,63 @@ AIC(GLM_BM_1,GLM_BM_2,GLM_BM_3,GLM_BM_4,GLM_BM_5,GLM_BM_6) #adding block doesn't
 
 
 
+bm1yr_plot<-ggplot(bmassC2, aes(x=LA_final, y=Total.bmass, color=trt))+
+  geom_point(shape=16, position=position_jitter(width=1,height=.5), size=3)+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)+    #Add linear regression lines and Don't add shaded confidence region
+  ylab("Total biomass (g)") +
+  xlab("Final leaf Area (cm2)")+
+  ggtitle("A) 12 months")+
+  scale_colour_manual(values=c("gray54", "orangered2","darkblue"))
+
+bm1yr_plot<-bm1yr_plot+ theme_classic()+theme(legend.direction = 'vertical', 
+                                              legend.position = c(0.1,0.85),
+                                              plot.title = element_text(color="black", size=18, hjust=0.05, vjust=-.2),
+                                              legend.background = element_rect(size=0.5, linetype="solid", color="black"),
+                                              axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.text=element_text(colour="black", size = 14),                             #sets size and style of labels on axes
+                                              legend.title = element_blank(), #remove title of legend
+                                              legend.text = element_text(color="black", size=14))   #plot margin - top, right, bottom, left
+
+
+print(bm1yr_plot)
+
+
+
+
+
+
+
+
+
+
+# ######################################################
+# total biomass after 24 months (Cohort 1)
+# ######################################################
+# 
+
+
+
+bm2yr_plot<-ggplot(bmassC1, aes(x=LA_final, y=Total.bmass, color=trt))+
+  geom_point(shape=16, position=position_jitter(width=1,height=.5), size=3)+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)+    #Add linear regression lines and Don't add shaded confidence region
+  ylab("Total biomass (g)") +
+  xlab("Final leaf Area (cm2)")+
+  ggtitle("B) 24 months")+
+  scale_colour_manual(values=c("gray54", "orangered2","darkblue"))
+
+bm2yr_plot<-bm2yr_plot+ theme_classic()+theme(legend.direction = 'vertical', 
+                                              legend.position = c(0.1,0.85),
+                                              plot.title = element_text(color="black", size=18, hjust=0.05, vjust=-.2),
+                                              legend.background = element_rect(size=0.5, linetype="solid", color="black"),
+                                              axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.text=element_text(colour="black", size = 14),                             #sets size and style of labels on axes
+                                              legend.title = element_blank(), #remove title of legend
+                                              legend.text = element_text(color="black", size=14))   #plot margin - top, right, bottom, left
+
+
+print(bm2yr_plot)
 
 
 
