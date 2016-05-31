@@ -358,6 +358,7 @@ names(sdlg_size_C2end)[4] <- "block"
 names(sdlg_size_C2end)[5] <- "cohort"
 names(sdlg_size_C2end)[6] <- "days"
 na.omit(sdlg_size_C2end)
+sdlg_size_end$block<-as.factor(sdlg_size_end$block) #set factor as a block
 str(sdlg_size_C2end)
 summary(sdlg_size_C2end)
 
@@ -392,16 +393,18 @@ na.omit(COHORT2.wide)%>% group_by(trt) %>%summarise(sd=sd(LAt1))
 # Analysis: total leaf area after 12 months (Cohorts 1 and 2)
 # ######################################################
 
-ONE_YR_LA_C1<-dplyr::select(COHORT1.wide,cohort, block, trt, sdlg.type, LAt1,LAt6)
+ONE_YR_LA_C1<-dplyr::select(COHORT1.wide,cohort, block, trt, sdlg.type, LAt1,LAt6, days)
 names(ONE_YR_LA_C1)[5] <- "LA_initial"
 names(ONE_YR_LA_C1)[6] <- "LA_final"
-ONE_YR_LA_C2<-dplyr::select(COHORT2.wide,cohort, block, trt, sdlg.type, LAt1,LAt4)
+
+ONE_YR_LA_C2<-dplyr::select(COHORT2.wide,cohort, block, trt, sdlg.type, LAt1,LAt4, days)
 names(ONE_YR_LA_C2)[5] <- "LA_initial"
 names(ONE_YR_LA_C2)[6] <- "LA_final"
 ONE_YEAR_LA<-rbind(ONE_YR_LA_C1,ONE_YR_LA_C2)
 ONE_YEAR_LA$cohort<-as.factor(ONE_YEAR_LA$cohort)
-
+ONE_YEAR_LA$block<-as.factor(ONE_YEAR_LA$block)
 summary(ONE_YEAR_LA)
+str(ONE_YEAR_LA)
 
 # Visualization
 la1yr_plot<-ggplot(ONE_YEAR_LA, aes(x=LA_initial, y=LA_final, color=trt))+
@@ -440,50 +443,104 @@ na.omit(ONE_YEAR_LA)%>% group_by(cohort) %>%summarise(avg=mean(LA_final))
 na.omit(ONE_YEAR_LA)%>% group_by(cohort) %>%summarise(sd=sd(LA_final))
 
 # GLMs
-GLM_LA1.1<-glm(LA_final ~ 1, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.1<-glm(LA_final ~ 1, data = ONE_YEAR_LA, family = gaussian) #INTERCEPT
 summary(GLM_LA1.1)
-GLM_LA1.2<-glm(LA_final ~ LA_initial, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.2<-glm(LA_final ~ LA_initial, data = ONE_YEAR_LA, family = gaussian) #INITIAL LEAF AREA 
 summary(GLM_LA1.2)
-GLM_LA1.3<-glm(LA_final ~ trt, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.3<-glm(LA_final ~ block, data = ONE_YEAR_LA, family = gaussian) #BLOCK
 summary(GLM_LA1.3)
-GLM_LA1.4<-glm(LA_final ~ cohort, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.4<-glm(LA_final ~ trt, data = ONE_YEAR_LA, family = gaussian) #TREATMENT
 summary(GLM_LA1.4)
-GLM_LA1.5<-glm(LA_final ~ block, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.5<-glm(LA_final ~ days, data = ONE_YEAR_LA, family = gaussian) #days
 summary(GLM_LA1.5)
-GLM_LA1.6<-glm(LA_final ~ LA_initial+trt, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.6<-glm(LA_final ~ cohort, data = ONE_YEAR_LA, family = gaussian) #cohort
 summary(GLM_LA1.6)
-GLM_LA1.7<-glm(LA_final ~ LA_initial+block, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.7<-glm(LA_final ~ block+LA_initial, data = (ONE_YEAR_LA), family = gaussian) #INITIAL LA + BLOCK
 summary(GLM_LA1.7)
-GLM_LA1.8<-glm(LA_final ~ LA_initial+cohort, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.8<-glm(LA_final ~ trt+LA_initial, data = ONE_YEAR_LA, family = gaussian) # INITIAL LA + TRT
 summary(GLM_LA1.8)
-GLM_LA1.9<-glm(LA_final ~ LA_initial*cohort*trt+block, data = ONE_YEAR_LA, family = gaussian)
+GLM_LA1.9<-glm(LA_final ~ trt+cohort, data = ONE_YEAR_LA, family = gaussian) # INITIAL LA + TRT
 summary(GLM_LA1.9)
+GLM_LA1.10<-glm(LA_final ~ trt*cohort, data = ONE_YEAR_LA, family = gaussian) #TRT*cohort
+summary(GLM_LA1.10)
+GLM_LA1.11<-glm(LA_final ~ trt+LA_initial+block, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT+BLOCK
+summary(GLM_LA1.11)
+GLM_LA1.12<-glm(LA_final ~ trt+LA_initial+cohort, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT+cohort
+summary(GLM_LA1.12)
+GLM_LA1.13<-glm(LA_final ~ trt*cohort+LA_initial, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT*cohort
+summary(GLM_LA1.13)
+GLM_LA1.14<-glm(LA_final ~ trt+LA_initial+cohort+block, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT+BLOCK+cohort
+summary(GLM_LA1.14)
+GLM_LA1.15<-glm(LA_final ~ trt*cohort+block, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT*cohort
+summary(GLM_LA1.15)
+GLM_LA1.16<-glm(LA_final ~ trt*cohort+LA_initial+block, data = ONE_YEAR_LA, family = gaussian) #INITIAL LA+TRT*cohort
+summary(GLM_LA1.16)
+
+model.namesLA1 <- c("1 Intercept", "2 Initial Leaf Area", "3 Block", "4 Density",
+                 "5 Days",
+                 "6 Cohort",
+                 "7 Block+Initial Leaf Area",
+                 "8 Density+Initial Leaf Area",
+                 "9 Density+Cohort",
+                 "10 Density*Cohort",
+                 "11 Density+Initial Leaf Area+Block",
+                 "12 Density+Initial Leaf Area+Cohort",
+                 "13 Density*Cohort+Initial Leaf Area",
+                 "14 Density+Cohort+Initial Leaf Area+Block",
+                 "15 Density*Cohort+Block",
+                 "16 Density*Cohort+Initial Leaf Area+Block")
+                 
+#OLD GLMS# 
+# GLM_LA1.1<-glm(LA_final ~ 1, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.1)
+# GLM_LA1.2<-glm(LA_final ~ LA_initial, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.2)
+# GLM_LA1.3<-glm(LA_final ~ trt, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.3)
+# GLM_LA1.4<-glm(LA_final ~ cohort, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.4)
+# GLM_LA1.5<-glm(LA_final ~ block, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.5)
+# GLM_LA1.6<-glm(LA_final ~ LA_initial+trt, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.6)
+# GLM_LA1.7<-glm(LA_final ~ LA_initial+block, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.7)
+# GLM_LA1.8<-glm(LA_final ~ LA_initial+cohort, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.8)
+# GLM_LA1.9<-glm(LA_final ~ LA_initial*cohort*trt+block, data = ONE_YEAR_LA, family = gaussian)
+# summary(GLM_LA1.9)
 
 anova(GLM_LA1.1,GLM_LA1.2, test = "Chisq")  #imp fit by adding LA t1  over just intercept
-anova(GLM_LA1.1,GLM_LA1.3, test = "Chisq")  # imp fit by adding trt over just intercept 
-anova(GLM_LA1.1,GLM_LA1.4, test = "Chisq")  # imp fit by adding cohort instead of intercept
-anova(GLM_LA1.1,GLM_LA1.5, test = "Chisq")  #imp fit by adding block instead of intercept
-anova(GLM_LA1.6,GLM_LA1.7, test = "Chisq")  
+anova(GLM_LA1.2,GLM_LA1.3, test = "Chisq")  # imp fit by adding trt over just intercept 
+anova(GLM_LA1.3,GLM_LA1.4, test = "Chisq")  # imp fit by adding cohort instead of intercept
+anova(GLM_LA1.4,GLM_LA1.5, test = "Chisq")  #imp fit by adding block instead of intercept
+anova(GLM_LA1.4,GLM_LA1.6, test = "Chisq")  
 anova(GLM_LA1.7,GLM_LA1.2, test = "Chisq")  
 anova(GLM_LA1.2,GLM_LA1.7, test = "Chisq")  
 anova(GLM_LA1.2,GLM_LA1.9, test = "Chisq")  
 
-AIC(GLM_LA1.1,GLM_LA1.2,GLM_LA1.3,GLM_LA1.4,GLM_LA1.5,GLM_LA1.6,GLM_LA1.7,GLM_LA1.8,GLM_LA1.9) #for cohort 2 best model fit is just ht
+AIC(GLM_LA1.1,GLM_LA1.2,GLM_LA1.3,GLM_LA1.4,GLM_LA1.5,GLM_LA1.6,GLM_LA1.7,GLM_LA1.8,GLM_LA1.9,GLM_LA1.10,
+    GLM_LA1.11,GLM_LA1.12,GLM_LA1.13,GLM_LA1.14,GLM_LA1.15,GLM_LA1.16) #for cohort 2 best model fit is just ht
 
 # TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
-summ.table <- do.call(rbind, lapply(list(GLM_LA1.1,GLM_LA1.2,GLM_LA1.3,GLM_LA1.4,GLM_LA1.5,GLM_LA1.6,GLM_LA1.7,GLM_LA1.8,GLM_LA1.9), broom::glance))
-summ.table
-table.cols <- c("df.residual", "deviance", "AIC")
-reported.table <- summ.table[table.cols]
-names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+summ.tableLA12 <- do.call(rbind, lapply(list(GLM_LA1.1,GLM_LA1.2,GLM_LA1.3,GLM_LA1.4,GLM_LA1.5,GLM_LA1.6,
+                                             GLM_LA1.7,GLM_LA1.8,GLM_LA1.9,GLM_LA1.10,GLM_LA1.11,GLM_LA1.12,
+                                             GLM_LA1.13,GLM_LA1.14,GLM_LA1.15,GLM_LA1.16), broom::glance))
+summ.tableLA12
+table.cols12 <- c("df.residual", "deviance", "AIC")
+reported.tableLA12 <- summ.tableLA12[table.cols]
+names(reported.tableLA12) <- c("Resid. Df", "Resid. Dev", "AIC")
 
-reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
-reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
-reported.table$AIC <- NULL
-reported.table$weight <- round(reported.table$weight, 2)
-reported.table$dAIC <- round(reported.table$dAIC, 1)
-row.names(reported.table) <- model.names
-reported.table
+reported.tableLA12[['dAIC']] <-  with(reported.tableLA12, AIC - min(AIC))
+reported.tableLA12[['weight']] <- with(reported.tableLA12, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.tableLA12$AIC <- NULL
+reported.tableLA12$weight <- round(reported.tableLA12$weight, 2)
+reported.tableLA12$dAIC <- round(reported.tableLA12$dAIC, 1)
+row.names(reported.tableLA12) <- model.namesLA1
+reported.tableLA12
+
+write.table(reported.tableLA12, file = "LA_1yr_GLM.csv", , sep = ",", na = "NA", row.names = TRUE)
+
 
 # ######################################################
 # total leaf area after 24 months (Cohort 1)
@@ -545,58 +602,79 @@ boxplot(LA_final~days,data=sdlg_size_end) #Cohort 1 LA initial by block
 hist(sdlg_size_end$LA_final)
 hist(sdlg_size_end$LA_final)
 
-GLM_LA2.1<-glm(LA_final ~ 1, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.1)
-GLM_LA2.2<-glm(LA_final ~ LA_initial, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.2)
-GLM_LA2.3<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.3)
-GLM_LA2.4<-glm(LA_final ~ LA_initial+trt, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.4)
-GLM_LA2.5<-glm(LA_final ~ LA_initial*trt, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.5)
-GLM_LA2.6<-glm(LA_final ~ LA_initial+trt+block, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.6)
-GLM_LA2.7<-glm(LA_final ~ LA_initial+trt+days, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.7)
-GLM_LA2.8<-glm(LA_final ~ LA_initial+trt*days, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.8)
-GLM_LA2.9<-glm(LA_final ~ LA_initial+trt+block+days, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.9)
-GLM_LA2.10<-glm(LA_final ~ LA_initial+trt*days+block, data = sdlg_size_end, family = gaussian)
-summary(GLM_LA2.10)
+GLM_LA2.1<-glm(LA_final ~ 1, data = sdlg_size_end, family = gaussian) #INTERCEPT
+  summary(GLM_LA2.1)
+GLM_LA2.2<-glm(LA_final ~ LA_initial, data = sdlg_size_end, family = gaussian) #INITIAL LEAF AREA 
+  summary(GLM_LA2.2)
+GLM_LA2.3<-glm(LA_final ~ block, data = sdlg_size_end, family = gaussian) #BLOCK
+  summary(GLM_LA2.3)
+GLM_LA2.4<-glm(LA_final ~ trt, data = sdlg_size_end, family = gaussian) #TREATMENT
+  summary(GLM_LA2.4)
+GLM_LA2.5<-glm(LA_final ~ days, data = sdlg_size_end, family = gaussian) #days
+  summary(GLM_LA2.5)
+GLM_LA2.6<-glm(LA_final ~ block+LA_initial, data = (sdlg_size_end), family = gaussian) #INITIAL LA + BLOCK
+  summary(GLM_LA2.6)
+GLM_LA2.7<-glm(LA_final ~ trt+LA_initial, data = sdlg_size_end, family = gaussian) # INITIAL LA + TRT
+  summary(GLM_LA2.7)
+GLM_LA2.8<-glm(LA_final ~ trt*days, data = sdlg_size_end, family = gaussian) #TRT*DAYS
+  summary(GLM_LA2.8)
+GLM_LA2.9<-glm(LA_final ~ trt+LA_initial+block, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT+BLOCK
+  summary(GLM_LA2.9)
+GLM_LA2.10<-glm(LA_final ~ trt+LA_initial+days, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT+DAYS
+  summary(GLM_LA2.10)
+GLM_LA2.11<-glm(LA_final ~ trt*days+LA_initial, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT*DAYS
+  summary(GLM_LA2.11)
+GLM_LA2.12<-glm(LA_final ~ trt+LA_initial+days+block, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT+BLOCK+DAYS
+  summary(GLM_LA2.12)
+GLM_LA2.13<-glm(LA_final ~ trt*days+block, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT*DAYS
+  summary(GLM_LA2.13)
+GLM_LA2.14<-glm(LA_final ~ trt*days+LA_initial+block, data = sdlg_size_end, family = gaussian) #INITIAL LA+TRT*DAYS
+  summary(GLM_LA2.14)
+GLM_LA2.15<-glm(LA_final ~ trt+days, data = sdlg_size_end, family = gaussian) #TRT*DAYS
+  summary(GLM_LA2.15)
 
 
+model.names <- c("1 Intercept", "2 Initial Leaf Area", "3 Block", "4 Density","5 Days Since Transplant",
+                 "6 Initial Leaf Area+Block",
+                 "7 Density+Initial Leaf Area",
+                 "8 Density*Days Since Transplant",
+                 "9 Density+Initial Leaf Area+Block",
+                 "10 Density+Initial Leaf Area+Days Since Transplant",
+                 "11 Density*Days Since Transplant+Initial Leaf Area",
+                 "12 Density+Days Since Transplant+Initial Leaf Area+Block",
+                 "13 Density*Days Since Transplant+Block",
+                 "14 Density*Days Since Transplant+Initial Leaf Area+Block",
+                 "15 Density+Days Since Transplanting")
 
 
+AIC(GLM_LA2.1,GLM_LA2.2,GLM_LA2.3,GLM_LA2.4,GLM_LA2.5,GLM_LA2.6,GLM_LA2.7,GLM_LA2.8, GLM_LA2.9, 
+    GLM_LA2.10, GLM_LA2.11, GLM_LA2.12, GLM_LA2.13, GLM_LA2.14, GLM_LA2.15) #adding block doesn't result in lower AIC
 
-
-
-anova(GLM_LA2.1,GLM_LA2.2, test = "Chisq")  #imp fit by adding HT over just intercept
-anova(GLM_LA2.1,GLM_LA2.3, test = "Chisq")  #no imp fit by adding trt over just intercept (but close)
-anova(GLM_LA2.2,GLM_LA2.3, test = "Chisq")  #no imp fit by adding trt instead of ht
-anova(GLM_LA2.2,GLM_LA2.4, test = "Chisq")  #adding trt and ht better than just ht 
-anova(GLM_LA2.4,GLM_LA2.7, test = "Chisq")  #adding trt and trt*ht interaction best
-anova(GLM_LA2.7,GLM_LA2.8, test = "Chisq")  #adding trt and trt*ht interaction and days
-
-AIC(GLM_LA2.1,GLM_LA2.2,GLM_LA2.3,GLM_LA2.4,GLM_LA2.5,GLM_LA2.6,GLM_LA2.7,GLM_LA2.8, GLM_LA2.9, GLM_LA2.10) #adding block doesn't result in lower AIC
 
 # TO REPORT: http://www.ashander.info/posts/2015/10/model-selection-glms-aic-what-to-report/
-summ.table <- do.call(rbind, lapply(list(GLM_LA1.9,GLM_LA2.2,GLM_LA2.3,GLM_LA2.4,GLM_LA2.5,GLM_LA2.6,GLM_LA2.7,GLM_LA2.8, GLM_LA2.9, GLM_LA2.10), broom::glance))
-summ.table
-table.cols <- c("df.residual", "deviance", "AIC")
-reported.table <- summ.table[table.cols]
-names(reported.table) <- c("Resid. Df", "Resid. Dev", "AIC")
+summ.tableLA24 <- do.call(rbind, lapply(list(GLM_LA2.1,GLM_LA2.2,GLM_LA2.3,GLM_LA2.4,GLM_LA2.5,GLM_LA2.6,GLM_LA2.7,
+                                             GLM_LA2.8, GLM_LA2.9, GLM_LA2.10, GLM_LA2.11, GLM_LA2.12, GLM_LA2.13, GLM_LA2.14, GLM_LA2.15), broom::glance))
+summ.tableLA24
+table.colsLA24 <- c("df.residual", "deviance", "AIC")
+reported.tableLA24 <- summ.tableLA24[table.colsLA24]
+names(reported.tableLA24) <- c("Resid. Df", "Resid. Dev", "AIC")
 
-reported.table[['dAIC']] <-  with(reported.table, AIC - min(AIC))
-reported.table[['weight']] <- with(reported.table, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
-reported.table$AIC <- NULL
-reported.table$weight <- round(reported.table$weight, 2)
-reported.table$dAIC <- round(reported.table$dAIC, 1)
-row.names(reported.table) <- model.names
-reported.table
+reported.tableLA24[['dAIC']] <-  with(reported.tableLA24, AIC - min(AIC))
+reported.tableLA24[['weight']] <- with(reported.tableLA24, exp(- 0.5 * dAIC) / sum(exp(- 0.5 * dAIC)))
+reported.tableLA24$AIC <- NULL
+reported.tableLA24$weight <- round(reported.tableLA24$weight, 2)
+reported.tableLA24$dAIC <- round(reported.tableLA24$dAIC, 1)
+row.names(reported.tableLA24) <- model.names
+reported.tableLA24
 
+write.table(reported.tableLA24, file = "LA_2yr_GLM.csv", , sep = ",", na = "NA", row.names = TRUE)
 
+anova(GLM_LA2.1,GLM_LA2.2, test = "Chisq")  #do not imp fit by adding INITIAL LA over just intercept
+anova(GLM_LA2.1,GLM_LA2.3, test = "Chisq")  #imp fit by adding BLOCK over just intercept 
+anova(GLM_LA2.1,GLM_LA2.4, test = "Chisq")  #imp fit by adding TRT P=0.056
+anova(GLM_LA2.1,GLM_LA2.5, test = "Chisq")  #adding DAYS SINCE TPLANT imporives fit
+anova(GLM_LA2.3,GLM_LA2.6, test = "Chisq")  #adding trt and trt*ht interaction best
+anova(GLM_LA2.10,GLM_LA2.12, test = "Chisq")  #adding trt and trt*ht interaction and days
 # ######################################################
 # ######################################################
 # BIOMASS ANALYSES - SET UP
@@ -707,13 +785,6 @@ print(bm1yr_plot)
 
 
 
-
-
-
-
-
-
-
 # ######################################################
 # total biomass after 24 months (Cohort 1)
 # ######################################################
@@ -741,6 +812,88 @@ bm2yr_plot<-bm2yr_plot+ theme_classic()+theme(legend.direction = 'vertical',
 
 
 print(bm2yr_plot)
+
+
+
+
+
+# ######################################################
+# RS after 12 months (Cohort 2)
+# ######################################################
+# 
+
+rs1yr_plot<-ggplot(bmassC2, aes(x=LA_final, y=RSratio, color=trt))+
+  geom_point(shape=16, position=position_jitter(width=1,height=.5), size=3)+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)+    #Add linear regression lines and Don't add shaded confidence region
+  ylab("root:shoot ratio") +
+  xlab("Final leaf Area (cm2)")+
+  ggtitle("C) 12 months")+
+  scale_colour_manual(values=c("gray54", "orangered2","darkblue"))
+
+rs1yr_plot<-rs1yr_plot+ theme_classic()+theme(legend.direction = 'vertical', 
+                                              legend.position = c(0.1,0.85),
+                                              plot.title = element_text(color="black", size=18, hjust=0.05, vjust=-.2),
+                                              legend.background = element_rect(size=0.5, linetype="solid", color="black"),
+                                              axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.text=element_text(colour="black", size = 14),                             #sets size and style of labels on axes
+                                              legend.title = element_blank(), #remove title of legend
+                                              legend.text = element_text(color="black", size=14))   #plot margin - top, right, bottom, left
+
+
+print(rs1yr_plot)
+
+
+
+
+
+
+
+
+
+
+
+# ######################################################
+# RS after 24 months (Cohort 1)
+# ######################################################
+# 
+
+
+
+rs2yr_plot<-ggplot(bmassC1, aes(x=LA_final, y=RSratio, color=trt))+
+  geom_point(shape=16, position=position_jitter(width=1,height=.5), size=3)+ #shape 1 = hollow circles, jitter plot to seperate overlapping points
+  geom_smooth(method=lm, se=FALSE)+    #Add linear regression lines and Don't add shaded confidence region
+  ylab("root:shoot ratio") +
+  xlab("Final leaf Area (cm2)")+
+  ggtitle("D) 24 months")+
+  scale_colour_manual(values=c("gray54", "orangered2","darkblue"))
+
+rs2yr_plot<-rs2yr_plot+ theme_classic()+theme(legend.direction = 'vertical', 
+                                              legend.position = c(0.1,0.85),
+                                              plot.title = element_text(color="black", size=18, hjust=0.05, vjust=-.2),
+                                              legend.background = element_rect(size=0.5, linetype="solid", color="black"),
+                                              axis.title.x=element_text(colour="black", size = 18, vjust=-0.5),            #sets x axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.title.y=element_text(colour="black", size = 18, vjust=2),            #sets y axis title size, style, distance from axis #add , face = "bold" if you want bold
+                                              axis.text=element_text(colour="black", size = 14),                             #sets size and style of labels on axes
+                                              legend.title = element_blank(), #remove title of legend
+                                              legend.text = element_text(color="black", size=14))   #plot margin - top, right, bottom, left
+
+
+print(rs2yr_plot)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
